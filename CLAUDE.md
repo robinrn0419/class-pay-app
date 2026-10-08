@@ -12,7 +12,7 @@
 ## 資料夾內容
 - `www/index.html`：目前最新的完整 App（單一 HTML 檔，沒有外部依賴，系統字體，可離線）。
 - `www/icon.png`：App 圖示（512×512）。
-- `web-offline/`：已部署到 GitHub Pages 的離線網頁版（index.html + sw.js + manifest + icon）。sw.js 的 VERSION 目前是 `class-pay-v5`，更新網頁版時要加一。
+- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v5`，更新網頁版時要加一。
 
 ## App 現在的功能
 四步流程：選內容 → 我評估 → 對方評估（看不到我的答案）→ 結果。
