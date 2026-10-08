@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>課堂薪水</title>
+<style>
+:root{
+  --bg:#F2F2F7;--card:#FFFFFF;--label:#000000;--sec:rgba(60,60,67,.62);--sep:rgba(60,60,67,.2);
+  --fill:rgba(118,118,128,.12);--press:rgba(60,60,67,.09);--tint:#1F7A55;--on-tint:#FFFFFF;
+  --bar:rgba(242,242,247,.88);--knob:#FFFFFF;--seg:#FFFFFF;--warn:#B25000;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  --round:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"PingFang TC",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000;--card:#1C1C1E;--label:#FFFFFF;--sec:rgba(235,235,245,.6);--sep:rgba(84,84,88,.6);
+    --fill:rgba(118,118,128,.24);--press:rgba(235,235,245,.1);--tint:#4CC38A;--on-tint:#00210F;
+    --bar:rgba(0,0,0,.82);--knob:#FFFFFF;--seg:#636366;--warn:#FF9F0A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000;--card:#1C1C1E;--label:#FFFFFF;--sec:rgba(235,235,245,.6);--sep:rgba(84,84,88,.6);
+  --fill:rgba(118,118,128,.24);--press:rgba(235,235,245,.1);--tint:#4CC38A;--on-tint:#00210F;
+  --bar:rgba(0,0,0,.82);--knob:#FFFFFF;--seg:#636366;--warn:#FF9F0A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--label);
+  font-family:var(--font);font-size:17px;line-height:1.3;letter-spacing:-.01em;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  touch-action:manipulation;overscroll-behavior:none;
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+input{-webkit-user-select:text;user-select:text}
+button:focus-visible,input:focus-visible,.ruler:focus-visible{outline:2px solid var(--tint);outline-offset:2px}
+[hidden]{display:none!important}
+
+.shell{height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto}
+
+/* 標題列 */
+.nav{
+  flex:none;position:relative;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;
+  background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:.5px solid transparent;z-index:2;transition:border-color .2s;
+}
+.nav.lined{border-bottom-color:var(--sep)}
+.nav-title{position:absolute;left:96px;right:96px;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.nav-btn{display:flex;align-items:center;gap:3px;height:44px;padding:0 8px;color:var(--tint);transition:opacity .15s}
+.nav-btn:active{opacity:.4}
+.nav-btn svg{width:12px;height:21px;flex:none}
+
+/* 內容區 */
+.scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 16px 20px}
+.screen{display:none}
+.screen.on{display:block;animation:push .4s var(--ease) both}
+.back .screen.on{animation-name:pop}
+@keyframes push{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+
+.large{font-size:34px;font-weight:700;letter-spacing:.01em;line-height:1.2;margin:4px 4px 14px}
+.group{background:var(--card);border-radius:12px;overflow:hidden;margin-top:14px}
+.head{font-size:13px;color:var(--sec);margin:18px 16px -8px}
+.foot{font-size:13px;line-height:1.4;color:var(--sec);margin:7px 16px 0;font-variant-numeric:tabular-nums}
+.foot:empty{display:none}
+
+.row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;padding:7px 16px}
+.row + .row::before,.diff + .diff::before,.list li + li::before{
+  content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep);
+}
+.val{color:var(--sec);font-variant-numeric:tabular-nums;text-align:right}
+.ctl{display:flex;align-items:center;gap:12px}
+.ctl .v{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl input{
+  width:3.4em;padding:5px 6px;border:0;border-radius:7px;background:var(--fill);color:var(--label);
+  font:inherit;font-variant-numeric:tabular-nums;text-align:right;-moz-appearance:textfield;appearance:textfield;
+}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* 加減鈕 */
+.stp{display:flex;flex:none;height:32px;border-radius:8px;background:var(--fill);overflow:hidden}
+.stp button{width:47px;height:32px;font-size:22px;font-weight:300;line-height:30px;position:relative;transition:background .15s}
+.stp button + button::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:.5px;background:var(--sep)}
+.stp button:active{background:var(--press)}
+
+/* 分段選擇 */
+.seg{display:flex;flex:none;padding:2px;border-radius:9px;background:var(--fill)}
+.seg button{min-width:76px;height:28px;padding:0 12px;border-radius:7px;font-size:13px;font-weight:500;transition:background .25s var(--ease),box-shadow .25s var(--ease)}
+.seg button[aria-pressed="true"]{background:var(--seg);font-weight:600;box-shadow:0 3px 8px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
+
+/* 開關 */
+.sw{flex:none;position:relative;width:51px;height:31px;border-radius:16px;background:var(--fill);transition:background .25s var(--ease)}
+.sw::after{
+  content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:var(--knob);
+  box-shadow:0 3px 8px rgba(0,0,0,.15),0 0 0 .5px rgba(0,0,0,.06);transition:transform .3s var(--ease);
+}
+.sw[aria-checked="true"]{background:var(--tint)}
+.sw[aria-checked="true"]::after{transform:translateX(20px)}
+
+/* 清單 */
+.list{margin:0;padding:0;list-style:none}
+.list li{position:relative}
+.list button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:8px 14px 8px 16px;text-align:left;transition:background .15s}
+.list button:active{background:var(--press)}
+.list .meta{display:flex;align-items:center;gap:8px;color:var(--sec);font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.list .meta svg{width:8px;height:14px;opacity:.5}
+.list .kv{display:flex;justify-content:space-between;gap:16px;min-height:44px;padding:11px 16px;font-size:15px}
+.list .kv span:first-child{color:var(--sec);flex:none}
+.list .kv span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+
+/* 難易度量尺 */
+.diff{position:relative;padding:11px 16px 8px}
+.diff-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.lv{color:var(--sec);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.lv.set{color:var(--label);font-weight:600}
+.ruler{
+  position:relative;display:grid;grid-template-columns:repeat(15,1fr);height:46px;margin:9px -6px 0;
+  border-top:1.5px solid var(--label);touch-action:pan-y;cursor:pointer;
+}
+.ruler i{position:relative;pointer-events:none}
+.ruler i::before{
+  content:"";position:absolute;top:0;left:50%;width:3px;height:8px;margin-left:-1.5px;border-radius:0 0 1.5px 1.5px;
+  background:var(--sec);transform-origin:top;transform:scaleX(.4);
+  transition:transform .35s var(--ease),background .2s;
+}
+.ruler i.major::before{height:13px;background:var(--label);transform:scaleX(.55)}
+.ruler i.major::after{
+  content:attr(data-n);position:absolute;top:24px;left:50%;transform:translateX(-50%);
+  font-size:12px;font-style:normal;color:var(--sec);font-variant-numeric:tabular-nums;
+}
+.ruler i.on::before{background:var(--tint);transform:scale(1,2.6)}
+.ruler i.major.on::before{transform:scale(1,1.6)}
+.ruler i.major.on::after{color:var(--tint);font-weight:700}
+
+.note{padding:13px 16px;font-size:15px;line-height:1.45}
+
+/* 結果 */
+.hero-num{margin-top:2px;font-family:var(--round);font-weight:700;font-size:clamp(60px,20vw,84px);line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hero-num span{font-family:var(--font);font-size:20px;font-weight:600;letter-spacing:0;margin-left:6px;color:var(--sec)}
+.warn{color:var(--warn)}
+
+/* 底部按鈕 */
+.dock{
+  flex:none;padding:10px 16px 12px;background:var(--bar);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  border-top:.5px solid var(--sep);
+}
+.primary{
+  display:block;width:100%;height:50px;border-radius:14px;background:var(--tint);color:var(--on-tint);
+  font-weight:600;transition:transform .2s var(--ease),opacity .2s,background .2s;
+}
+.primary:active{transform:scale(.975);opacity:.82}
+.primary:disabled{background:var(--fill);color:var(--sec);transform:none;opacity:1;cursor:default}
+
+/* 設定 */
+.veil{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .35s var(--ease);z-index:5}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:6;
+  display:flex;flex-direction:column;background:var(--bg);border-radius:12px 12px 0 0;overflow:hidden;
+  transform:translateY(102%);visibility:hidden;transition:transform .45s var(--ease),visibility 0s .45s;
+}
+.open .veil{opacity:1;pointer-events:auto}
+.open .sheet{transform:none;visibility:visible;transition:transform .45s var(--ease)}
+.sheet .nav{background:var(--bg)}
+.sheet .nav-btn.done{font-weight:600}
+.sheet-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.sheet-in{max-width:520px;margin:0 auto}
+.set{font-size:16px}
+.set input{
+  flex:none;width:92px;padding:6px 8px;border:0;border-radius:7px;background:var(--fill);color:var(--label);
+  font:inherit;font-size:17px;font-variant-numeric:tabular-nums;text-align:right;
+}
+.set.pair{justify-content:flex-start;gap:8px}
+.set.pair input{width:68px}
+.err{color:var(--warn);min-height:1.4em}
+.reset{display:block;width:100%;min-height:50px;color:var(--warn);text-align:center;transition:background .15s}
+.reset:active{background:var(--press)}
+
+
+/* 每種內容的顏色 */
+:root{--c-teach:#B8500A;--c-code:#4B50C8;--c-model:#0E7C86;--c-pcb:#1F7A55}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--c-teach:#FFA033;--c-code:#A3A7FF;--c-model:#48CCD4;--c-pcb:#4CC38A;--on-tint:#08090A}
+}
+:root[data-theme="dark"]{--c-teach:#FFA033;--c-code:#A3A7FF;--c-model:#48CCD4;--c-pcb:#4CC38A;--on-tint:#08090A}
+body[data-sub="teach"]{--tint:var(--c-teach)}
+body[data-sub="code"]{--tint:var(--c-code)}
+body[data-sub="model"]{--tint:var(--c-model)}
+body[data-sub="pcb"]{--tint:var(--c-pcb)}
+
+/* 首頁方塊 */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.tile{
+  position:relative;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;
+  min-height:164px;padding:15px 15px 14px;border-radius:18px;overflow:hidden;text-align:left;
+  background:var(--c);color:var(--on-tint);
+  transition:transform .25s var(--ease),filter .25s var(--ease);
+  animation:rise .55s var(--ease) both;animation-delay:calc(var(--i) * 70ms);
+}
+.tile:active{transform:scale(.95);filter:brightness(.9)}
+.tile .ico{width:34px;height:34px}
+.tile .ghost{position:absolute;right:-22px;top:-18px;width:128px;height:128px;opacity:.16;stroke-width:1.4;pointer-events:none}
+.tile b{display:block;font-size:22px;font-weight:700;letter-spacing:.01em}
+.tile small{display:block;margin-top:2px;font-size:13px;opacity:.88;font-variant-numeric:tabular-nums}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.95)}to{opacity:1;transform:none}}
+
+/* 內容橫幅 */
+.banner{
+  display:flex;align-items:center;gap:12px;margin-top:8px;padding:12px 14px;border-radius:14px;
+  background:var(--fill);background:color-mix(in srgb,var(--tint) 14%,transparent);
+}
+.b-ico{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:var(--tint);color:var(--on-tint)}
+.b-ico svg{width:26px;height:26px}
+.banner b{display:block;font-weight:600}
+.banner span span,.banner small{display:block;font-size:13px;color:var(--sec);font-variant-numeric:tabular-nums}
+
+/* 回饋 */
+.lv,.ctl .v,.ctl input{display:inline-block;transform-origin:100% 50%}
+.bump{animation:bump .38s var(--ease)}
+@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.16)}100%{transform:scale(1)}}
+.ruler::before{
+  content:"";position:absolute;left:0;top:-2.5px;height:3.5px;width:calc(var(--p,0) * 100%);border-radius:2px;
+  background:var(--tint);transition:width .35s var(--ease);pointer-events:none;
+}
+.lv.set{color:var(--tint)}
+.primary.ready{animation:ready .5s var(--ease)}
+@keyframes ready{0%{transform:scale(.96)}55%{transform:scale(1.025)}100%{transform:scale(1)}}
+
+/* 結果卡 */
+.hero{
+  margin-top:8px;padding:18px 18px 15px;border-radius:20px;text-align:left;
+  background:var(--tint);color:var(--on-tint);animation:pop-in .6s var(--ease) both;
+}
+@keyframes pop-in{from{opacity:0;transform:scale(.93) translateY(10px)}to{opacity:1;transform:none}}
+.hero-top{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;opacity:.92}
+.hero-top svg{width:22px;height:22px}
+.hero .hero-num{margin-top:4px}
+.hero .hero-num span{color:inherit;opacity:.78}
+.cmp{position:relative;height:66px;margin:12px 6px 0}
+.cmp-line{position:absolute;left:0;right:0;top:32px;height:2px;border-radius:1px;background:currentColor;opacity:.32}
+.cmp-ticks{position:absolute;left:0;right:0;top:28px;height:10px;display:grid;grid-template-columns:repeat(15,1fr)}
+.cmp-ticks i{position:relative}
+.cmp-ticks i::before{content:"";position:absolute;left:50%;top:0;width:1.5px;height:10px;margin-left:-.75px;background:currentColor;opacity:.38}
+.mk{position:absolute;top:33px;left:3.33%;width:0;transition:left .9s var(--ease)}
+.mk::before{content:"";position:absolute;left:-6px;top:-6px;width:12px;height:12px;border-radius:50%;background:currentColor}
+.mk em{position:absolute;left:0;transform:translateX(-50%);font-style:normal;font-size:12px;font-weight:600;white-space:nowrap}
+.mk.me em{top:-31px}
+.mk.they em{top:12px}
+.mk.avg::before{left:-10px;top:-10px;width:20px;height:20px;background:none;border:2.5px solid currentColor}
+.cmp-cap{margin-top:2px;font-size:13px;opacity:.92;font-variant-numeric:tabular-nums}
+#rows li{animation:rise .45s var(--ease) both;animation-delay:calc(var(--i) * 35ms + 150ms)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+  <header class="nav" id="nav">
+    <button type="button" class="nav-btn" id="navBack" hidden>
+      <svg viewBox="0 0 12 21" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2 2 10.5 10 19"/></svg>
+      <span id="backLabel"></span>
+    </button>
+    <span id="navSpacer"></span>
+    <div class="nav-title" id="navTitle"></div>
+    <button type="button" class="nav-btn" id="openSet">設定</button>
+  </header>
+
+  <main class="scroll" id="scroll">
+    <!-- 1 選內容 -->
+    <section class="screen on" id="s1">
+      <h1 class="large">課堂薪水</h1>
+      <div class="tiles" id="subjects"></div>
+      <p class="foot">先選這次的內容，接著由你和對方各自評難易度，最後算出金額。</p>
+    </section>
+
+    <!-- 2 我填 -->
+    <section class="screen" id="s2">
+      <div class="banner"><span class="b-ico" id="bIco2"></span><span><b id="bName2"></b><small id="bMeta2"></small></span></div>
+      <div class="group" id="gTeach">
+        <div class="row"><span>上課時間</span>
+          <div class="ctl"><span class="v" id="hours"></span>
+            <div class="stp"><button type="button" data-k="hours" data-d="-0.5" aria-label="減少半小時">−</button><button type="button" data-k="hours" data-d="0.5" aria-label="增加半小時">+</button></div></div>
+        </div>
+        <div class="row"><span>人數</span>
+          <div class="ctl"><span class="v" id="people"></span>
+            <div class="stp"><button type="button" data-k="people" data-d="-1" aria-label="減少一人">−</button><button type="button" data-k="people" data-d="1" aria-label="增加一人">+</button></div></div>
+        </div>
+      </div>
+
+      <div class="group" id="gPiece">
+        <div class="row"><span>計價方式</span>
+          <div class="seg" data-k="mode"><button type="button" data-v="buyout">買斷</button><button type="button" data-v="unit">單個買</button></div>
+        </div>
+        <div class="row" id="fQty"><span>大約數量</span>
+          <div class="ctl"><input id="qty" type="number" inputmode="numeric" min="1" max="999" aria-label="購買數量"><span class="v">個</span>
+            <div class="stp"><button type="button" data-k="qty" data-d="-1" aria-label="減少一個">−</button><button type="button" data-k="qty" data-d="1" aria-label="增加一個">+</button></div></div>
+        </div>
+        <div class="row" id="fDays"><span>製作天數</span>
+          <div class="ctl"><input id="days" type="number" inputmode="numeric" min="1" max="365" aria-label="製作天數"><span class="v">天</span>
+            <div class="stp"><button type="button" data-k="days" data-d="-1" aria-label="減少一天">−</button><button type="button" data-k="days" data-d="1" aria-label="增加一天">+</button></div></div>
+        </div>
+      </div>
+      <p class="foot" id="pieceNote"></p>
+
+      <div class="group" id="gMine">
+        <div class="diff"><div class="diff-head"><span>我評的難易度</span><span class="lv" id="lv-mine"></span></div>
+          <div class="ruler" data-k="mine" aria-label="我評的難易度"></div></div>
+      </div>
+
+      <div class="group" id="gPcb">
+        <div class="diff"><div class="diff-head"><span>選購難易度</span><span class="lv" id="lv-p0"></span></div>
+          <div class="ruler" data-k="p0" aria-label="選購難易度"></div></div>
+        <div class="diff"><div class="diff-head"><span>原理圖難易度</span><span class="lv" id="lv-p1"></span></div>
+          <div class="ruler" data-k="p1" aria-label="原理圖難易度"></div></div>
+        <div class="diff"><div class="diff-head"><span>PCB 設計難易度</span><span class="lv" id="lv-p2"></span></div>
+          <div class="ruler" data-k="p2" aria-label="PCB 設計難易度"></div></div>
+      </div>
+      <p class="foot" id="pcbNote"></p>
+
+      <div class="group" id="gLong">
+        <div class="row"><span>長期方案</span>
+          <button type="button" class="sw" id="longSw" role="switch" aria-checked="false" aria-label="長期方案"></button>
+        </div>
+        <div class="row" id="fLessons"><span>預計堂數</span>
+          <div class="ctl"><input id="lessons" type="number" inputmode="numeric" min="2" max="999" aria-label="預計堂數"><span class="v">堂</span>
+            <div class="stp"><button type="button" data-k="lessons" data-d="-1" aria-label="減少一堂">−</button><button type="button" data-k="lessons" data-d="1" aria-label="增加一堂">+</button></div></div>
+        </div>
+      </div>
+      <p class="foot" id="teachNote"></p>
+    </section>
+
+    <!-- 3 對方填 -->
+    <section class="screen" id="s3">
+      <div class="banner"><span class="b-ico" id="bIco3"></span><span><b id="bName3"></b><small id="summary"></small></span></div>
+      <div class="group">
+        <div class="diff"><div class="diff-head"><span>綜合難易度</span><span class="lv" id="lv-theirs"></span></div>
+          <div class="ruler" data-k="theirs" aria-label="對方評的綜合難易度"></div></div>
+      </div>
+      <p class="foot">老師填的級數已經收起來。請依你自己的判斷，在量尺上點選或拖曳，給這次的內容一個綜合難易度。</p>
+    </section>
+
+    <!-- 4 結果 -->
+    <section class="screen" id="s4">
+      <div class="hero" id="hero">
+        <div class="hero-top"><span id="hIco"></span><span id="payLabel"></span></div>
+        <div class="hero-num"><output id="pay">0</output><span>元</span></div>
+        <div class="cmp" aria-hidden="true">
+          <div class="cmp-line"></div><div class="cmp-ticks" id="cmpTicks"></div>
+          <span class="mk avg" id="mkAvg"></span>
+          <span class="mk me" id="mkMe"><em>我</em></span>
+          <span class="mk they" id="mkThey"><em>對方</em></span>
+        </div>
+        <div class="cmp-cap" id="cmpCap"></div>
+      </div>
+      <div class="group" id="gapBox" hidden><div class="note warn" id="gap"></div></div>
+      <div class="group"><ul class="list" id="rows"></ul></div>
+      <p class="foot" id="formula"></p>
+    </section>
+  </main>
+
+  <footer class="dock" id="dock" hidden><button type="button" class="primary" id="primary"></button></footer>
+</div>
+
+<div class="veil" id="veil"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="設定">
+  <header class="nav lined">
+    <button type="button" class="nav-btn" id="cancelSet">取消</button>
+    <div class="nav-title">設定</div>
+    <button type="button" class="nav-btn done" id="saveSet">儲存</button>
+  </header>
+  <div class="sheet-scroll"><div class="sheet-in">
+    <p class="foot" style="margin-top:14px">每項填最低和最高的價格。教學的時薪主要看難易度，人數和時數加倍時只會多一部分。教學、3D 建模、畫 PCB 每升一級漲相同的百分比；寫程式前面幾級和超過的頭幾天加得比較快，最高價是 15 級而且做到封頂天數時的價格。</p>
+    <p class="foot err" id="err" role="alert"></p>
+    <div id="setBody"></div>
+    <div class="group"><button type="button" class="reset" id="resetSet">恢復預設值</button></div>
+  </div></div>
+</div>
+
+<script>
+(function(){
+  var BANDS=['入門','基礎','進階','深入','專精'];
+  var SUBJECTS=[
+    {id:'teach',name:'教學',type:'teach'},
+    {id:'code',name:'寫程式',type:'piece'},
+    {id:'model',name:'3D 建模',type:'piece'},
+    {id:'pcb',name:'畫 PCB',type:'pcb'}
+  ];
+  var PCB_PARTS=['選購','原理圖','PCB 設計'];
+  var DEFAULTS={
+    teach:{min:200,max:600,pd:18,hx:160,fee:100},
+    code:{min:200,max:3000,dmin:14,dmax:60,dw:20},
+    model:{min:300,max:2000},
+    pcb:{min:200,max:5000,w:[50,25,25]},
+    unit:{ratio:20,tiers:[[10,80],[30,60]]},
+    long:{tiers:[[5,95],[10,90],[20,85]]}
+  };
+  var KEY='class-pay-settings-v3';
+  var ICON={
+    teach:'M4 5h20v13H4z M14 18v5 M9 23h10 M9 10h10 M9 14h6',
+    code:'M10 8l-6 6 6 6 M18 8l6 6-6 6 M16 6l-4 16',
+    model:'M14 3l10 5.5v11L14 25 4 19.5v-11z M4 8.5l10 5.5 10-5.5 M14 14v11',
+    pcb:'M9 9h10v10H9z M12 4v5 M16 4v5 M12 19v5 M16 19v5 M4 12h5 M4 16h5 M19 12h5 M19 16h5'
+  };
+  function icon(id,cls){return '<svg class="'+(cls||'')+'" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+ICON[id]+'"/></svg>'}
+  function bump(e){e.classList.remove('bump');void e.offsetWidth;e.classList.add('bump')}
+  function rangeText(x){var c=cfg[x.id];return fmt(c.min)+'–'+fmt(c.max)+(x.type==='teach'?' 元／時':' 元')}
+  var CHEV='<svg viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l6 6-6 6"/></svg>';
+  var $=function(id){return document.getElementById(id)};
+  var clone=function(o){return JSON.parse(JSON.stringify(o))};
+  var el=function(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e};
+  var fmt=function(n){return Math.round(n).toLocaleString('zh-TW')};
+  var trim=function(n){return String(Math.round(n*100)/100)};
+  var band=function(L){return BANDS[Math.min(4,Math.max(0,Math.floor((Math.round(L)-1)/3)))]};
+  var getP=function(o,p){return p.split('.').reduce(function(a,k){return a[k]},o)};
+  var setP=function(o,p,v){var ks=p.split('.'),l=ks.pop();ks.reduce(function(a,k){return a[k]},o)[l]=v};
+
+  var SCHEMA=[
+    {t:'教學',f:[['teach.min','1 級時薪（元）'],['teach.max','15 級時薪（元）'],['teach.pd','人數每加倍，時薪加（%）'],['teach.hx','時數每加倍，價格變為（%）'],['teach.fee','每堂基本費（元）']]},
+    {t:'教學長期方案',pairs:[['long.tiers.0','堂'],['long.tiers.1','堂'],['long.tiers.2','堂']]},
+    {t:'寫程式',f:[['code.min','最低買斷價（元）'],['code.max','最高買斷價（元）'],['code.dmin','幾天以內不加價'],['code.dmax','做到幾天封頂'],['code.dw','天數占價格幅度（%）']]},
+    {t:'3D 建模',f:[['model.min','1 級買斷價（元）'],['model.max','15 級買斷價（元）']]},
+    {t:'單個買',f:[['unit.ratio','單價占買斷價（%）']],pairs:[['unit.tiers.0','個'],['unit.tiers.1','個']]},
+    {t:'畫 PCB',f:[['pcb.min','1 級價格（元）'],['pcb.max','15 級價格（元）'],['pcb.w.0','選購權重（%）'],['pcb.w.1','原理圖權重（%）'],['pcb.w.2','PCB 設計權重（%）']]}
+  ];
+  var PATHS=[];
+  SCHEMA.forEach(function(g){
+    (g.f||[]).forEach(function(x){PATHS.push(x[0])});
+    (g.pairs||[]).forEach(function(x){PATHS.push(x[0]+'.0',x[0]+'.1')});
+  });
+
+  function valid(s){
+    try{
+      if(!PATHS.every(function(p){var v=getP(s,p);return typeof v==='number'&&isFinite(v)&&v>=0}))return false;
+      return ['teach','code','model','pcb'].every(function(k){return s[k].min>0&&s[k].max>=s[k].min})&&
+        s.unit.ratio>0&&(s.pcb.w[0]+s.pcb.w[1]+s.pcb.w[2])>0&&
+        s.code.dmin>=1&&s.code.dmax>s.code.dmin&&s.code.dw<=100&&
+        s.teach.hx>=100&&s.teach.hx<=200;
+    }catch(e){return false}
+  }
+  function load(){
+    try{
+      var s=JSON.parse(localStorage.getItem(KEY));
+      if(s&&s.code&&typeof s.code.dw!=='number'){
+        s.code=clone(DEFAULTS.code);
+        if(s.model&&s.model.min===100&&s.model.max===2000)s.model=clone(DEFAULTS.model);
+      }
+      if(s&&s.teach&&typeof s.teach.pd!=='number'){s.teach.pd=DEFAULTS.teach.pd;s.teach.hx=DEFAULTS.teach.hx;if(typeof s.teach.fee!=='number')s.teach.fee=DEFAULTS.teach.fee}
+      if(valid(s))return s;
+    }catch(e){}
+    return clone(DEFAULTS);
+  }
+  function save(s){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+
+  var cfg=load();
+  var st={sub:null,hours:2,people:1,mode:'buyout',qty:10,days:14,long:'no',lessons:10,mine:null,p0:null,p1:null,p2:null,theirs:null};
+  var current=1;
+  var subject=function(){return SUBJECTS.filter(function(x){return x.id===st.sub})[0]||null};
+
+  /* 計算 */
+  function price(o,L){return o.min*Math.pow(o.max/o.min,(L-1)/14)}
+  function tier(tiers,n){
+    var pct=100,best=-1;
+    tiers.forEach(function(t){if(t[0]>0&&n>=t[0]&&t[0]>best){best=t[0];pct=t[1]}});
+    return pct;
+  }
+  function pcbMine(){
+    var w=cfg.pcb.w,sum=w[0]+w[1]+w[2];
+    return (st.p0*w[0]+st.p1*w[1]+st.p2*w[2])/sum;
+  }
+  function dayAdd(){
+    var c=cfg.code,t=Math.min(1,Math.max(0,(st.days-c.dmin)/(c.dmax-c.dmin)));
+    return (c.max-c.min)*c.dw/100*Math.sqrt(t);
+  }
+  function mineLevel(){return subject().type==='pcb'?pcbMine():st.mine}
+  function mineReady(){
+    var x=subject();if(!x)return false;
+    return x.type==='pcb'?!!(st.p0&&st.p1&&st.p2):!!st.mine;
+  }
+
+  /* 內容清單 */
+  function paintSubjects(){
+    var box=$('subjects');box.textContent='';
+    SUBJECTS.forEach(function(x,i){
+      var b=el('button','tile');b.type='button';
+      b.style.setProperty('--c','var(--c-'+x.id+')');b.style.setProperty('--i',i);
+      b.innerHTML=icon(x.id,'ghost')+icon(x.id,'ico');
+      var t=el('span');t.appendChild(el('b',null,x.name));t.appendChild(el('small',null,rangeText(x)));
+      b.appendChild(t);
+      b.addEventListener('click',function(){
+        st.sub=x.id;st.mine=st.p0=st.p1=st.p2=st.theirs=null;show(2);
+      });
+      box.appendChild(b);
+    });
+  }
+
+  /* 量尺 */
+  document.querySelectorAll('.ruler').forEach(function(r){
+    var k=r.dataset.k;
+    r.setAttribute('role','slider');r.tabIndex=0;
+    r.setAttribute('aria-valuemin','1');r.setAttribute('aria-valuemax','15');
+    for(var i=1;i<=15;i++){
+      var t=el('i');t.dataset.n=i;
+      if(i===1||i%5===0)t.className='major';
+      r.appendChild(t);
+    }
+    var down=false;
+    function pick(e){
+      var b=r.getBoundingClientRect();
+      var v=Math.min(15,Math.max(1,Math.floor((e.clientX-b.left)/b.width*15)+1));
+      if(st[k]!==v){st[k]=v;paint()}
+    }
+    r.addEventListener('pointerdown',function(e){down=true;try{r.setPointerCapture(e.pointerId)}catch(_){ }pick(e)});
+    r.addEventListener('pointermove',function(e){if(down)pick(e)});
+    ['pointerup','pointercancel'].forEach(function(n){r.addEventListener(n,function(){down=false})});
+    r.addEventListener('keydown',function(e){
+      var d=(e.key==='ArrowRight'||e.key==='ArrowUp')?1:(e.key==='ArrowLeft'||e.key==='ArrowDown')?-1:0;
+      if(!d)return;e.preventDefault();
+      st[k]=Math.min(15,Math.max(1,(st[k]||(d>0?0:16))+d));paint();
+    });
+  });
+  function paintRuler(k){
+    var v=st[k],r=document.querySelector('.ruler[data-k="'+k+'"]');
+    r.querySelectorAll('i').forEach(function(t){t.classList.toggle('on',+t.dataset.n===v)});
+    if(v){r.setAttribute('aria-valuenow',v);r.setAttribute('aria-valuetext',v+' 級 '+band(v))}
+    else{r.removeAttribute('aria-valuenow');r.setAttribute('aria-valuetext','尚未選擇')}
+    r.style.setProperty('--p',v?(v-.5)/15:0);
+    var lv=$('lv-'+k),txt=v?v+' 級・'+band(v):'點選或拖曳';
+    if(lv.textContent!==txt){lv.textContent=txt;if(v)bump(lv)}
+    lv.classList.toggle('set',!!v);
+  }
+
+  function paint(){
+    var x=subject();
+    if(x&&current>1)document.body.dataset.sub=x.id;else delete document.body.dataset.sub;
+    if(x){
+      var c=cfg[x.id],ty=x.type;
+      ['2','3'].forEach(function(n){$('bIco'+n).innerHTML=icon(x.id);$('bName'+n).textContent=x.name});
+      $('bMeta2').textContent=rangeText(x)+(ty==='pcb'?'，依三項難易度':ty==='teach'?'，依難易度':x.id==='code'?'，難易度為主、天數加成':'，依難易度');
+      $('gTeach').hidden=$('gLong').hidden=ty!=='teach';
+      $('fLessons').hidden=st.long!=='yes';
+      $('gPiece').hidden=ty!=='piece';
+      $('fQty').hidden=st.mode!=='unit';
+      $('fDays').hidden=x.id!=='code';
+      $('gMine').hidden=ty==='pcb';
+      $('gPcb').hidden=ty!=='pcb';
+
+      var notes=[];
+      if(ty==='piece'){
+        if(st.mode==='unit'){
+          var qp=tier(cfg.unit.tiers,st.qty);
+          notes.push('單價是買斷價的 '+trim(cfg.unit.ratio)+'%'+(qp<100?'，這個數量再收 '+trim(qp)+'%':'')+'。');
+        }
+        if(x.id==='code')notes.push(trim(c.dmin)+' 天以內不加價，'+trim(c.dmax)+' 天封頂'+(dayAdd()>0?'，目前加 '+fmt(dayAdd())+' 元':'')+'。');
+      }
+      $('pieceNote').textContent=notes.join('');
+      $('pcbNote').textContent=ty==='pcb'&&st.p0&&st.p1&&st.p2?'依權重合併後，我的綜合評分是 '+trim(pcbMine())+' 級。':'';
+      var tn='';
+      if(ty==='teach'){
+        tn=(c.fee>0?'每堂另加基本費 '+fmt(c.fee)+' 元。':'')+(c.hx<200?'時間越長，每小時越便宜。':'');
+        if(st.long==='yes'){var lp=tier(cfg.long.tiers,st.lessons);tn+=lp<100?'這個堂數每堂收 '+trim(lp)+'%。':'這個堂數還沒有折扣。'}
+      }
+      $('teachNote').textContent=tn;
+    }
+    $('hours').textContent=trim(st.hours)+' 小時';
+    $('people').textContent=st.people+' 人';
+    ['qty','days','lessons'].forEach(function(k){if(document.activeElement!==$(k))$(k).value=st[k]});
+    document.querySelectorAll('.seg').forEach(function(c){
+      c.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(st[c.dataset.k]===b.dataset.v))});
+    });
+    $('longSw').setAttribute('aria-checked',String(st.long==='yes'));
+    ['mine','p0','p1','p2','theirs'].forEach(paintRuler);
+
+    /* 標題列與底部按鈕 */
+    var p=$('primary');
+    $('dock').hidden=current===1;
+    $('navBack').hidden=current===1;
+    $('navSpacer').hidden=current!==1;
+    $('openSet').style.visibility=current===1?'visible':'hidden';
+    $('navTitle').textContent=current===1?'':current===2?'我的評估':current===3?'對方評估':'結果';
+    $('backLabel').textContent=current===2?'內容':current===3?'返回':'修改';
+    var was=p.disabled;
+    if(current===2){p.disabled=!mineReady();p.textContent=p.disabled?'先選完難易度':'收起我的答案，交給對方'}
+    else if(current===3){p.disabled=!st.theirs;p.textContent=st.theirs?'算出金額':'先選難易度'}
+    else{p.disabled=false;p.textContent='再算一筆'}
+    p.classList.remove('ready');
+    if(was&&!p.disabled&&current>1&&current<4){void p.offsetWidth;p.classList.add('ready')}
+  }
+
+  var LIM={hours:[0.5,12],people:[1,20],qty:[1,999],lessons:[2,999],days:[1,365]};
+  document.querySelectorAll('.stp button').forEach(function(b){
+    b.addEventListener('click',function(){
+      var k=b.dataset.k;
+      var old=st[k];
+      st[k]=Math.min(LIM[k][1],Math.max(LIM[k][0],st[k]+(+b.dataset.d)));paint();
+      if(st[k]!==old)bump($(k));
+    });
+  });
+  ['qty','lessons','days'].forEach(function(k){
+    var inp=$(k);
+    inp.addEventListener('input',function(){
+      var v=parseInt(inp.value,10);
+      if(isFinite(v)){st[k]=Math.min(LIM[k][1],Math.max(LIM[k][0],v));paint()}
+    });
+    inp.addEventListener('blur',function(){inp.value=st[k]});
+    inp.addEventListener('focus',function(){try{inp.select()}catch(e){}});
+  });
+  document.querySelectorAll('.seg').forEach(function(c){
+    c.addEventListener('click',function(e){
+      var b=e.target.closest('button');if(!b)return;
+      st[c.dataset.k]=b.dataset.v;paint();
+    });
+  });
+  $('longSw').addEventListener('click',function(){st.long=st.long==='yes'?'no':'yes';paint()});
+
+  function show(n){
+    $('shell').classList.toggle('back',n<current);
+    current=n;
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on')});
+    $('s'+n).classList.add('on');
+    $('scroll').scrollTop=0;$('nav').classList.remove('lined');
+    if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+    paint();
+  }
+  $('scroll').addEventListener('scroll',function(){$('nav').classList.toggle('lined',this.scrollTop>2)},{passive:true});
+
+  function summary(){
+    var x=subject(),a=[];
+    if(x.type==='teach'){
+      a.push(trim(st.hours)+' 小時',st.people+' 人');
+      if(st.long==='yes')a.push('長期方案約 '+st.lessons+' 堂');
+    }else if(x.type==='piece'){
+      if(x.id==='code')a.push('製作 '+st.days+' 天');
+      a.push(st.mode==='unit'?'單個買約 '+st.qty+' 個':'買斷');
+    }else a.push('選購、原理圖、PCB 設計');
+    return a.join('，');
+  }
+
+  function result(){
+    var x=subject(),c=cfg[x.id],ty=x.type;
+    var mL=mineLevel(),tL=st.theirs,avg=(mL+tL)/2,base=price(c,avg);
+    if(x.id==='code')base=c.min+(c.max-c.min)*(1-c.dw/100)*(1-Math.pow(1-(avg-1)/14,1.4));
+    var rows=[['內容',x.name]],pay,formula;
+    var lvl=function(L){return trim(L)+' 級・'+band(L)};
+
+    if(ty==='pcb'){
+      [st.p0,st.p1,st.p2].forEach(function(v,i){
+        var w=cfg.pcb.w,sum=w[0]+w[1]+w[2];
+        rows.push([PCB_PARTS[i]+'（占 '+trim(w[i]/sum*100)+'%）',v+' 級']);
+      });
+      rows.push(['我的綜合評分',lvl(mL)]);
+    }else rows.push(['我評的難易度',lvl(mL)]);
+    rows.push(['對方評的難易度',lvl(tL)]);
+    rows.push(['平均',lvl(avg)]);
+
+    if(ty==='teach'){
+      var fee=c.fee,pf=1+c.pd/100*Math.log(st.people)/Math.LN2;
+      var eh=Math.pow(st.hours,Math.log(c.hx/100)/Math.LN2),rate=base*pf;
+      var lp=st.long==='yes'?tier(cfg.long.tiers,st.lessons):100;
+      pay=Math.round((fee+eh*rate)*lp/100);
+      rows.push(['這個難易度的時薪',fmt(base)+' 元']);
+      if(st.people>1)rows.push(['人數加成',st.people+' 人，× '+trim(pf)+' = '+fmt(rate)+' 元']);
+      rows.push(['上課時間',trim(st.hours)+' 小時'+(Math.abs(eh-st.hours)>.005?'，折算 '+trim(eh)+' 小時':'')]);
+      if(fee>0)rows.push(['每堂基本費',fmt(fee)+' 元']);
+      if(st.long==='yes')rows.push(['長期方案','約 '+st.lessons+' 堂，'+(lp<100?'收 '+trim(lp)+'%':'沒有折扣')]);
+      formula=(fee>0?(lp<100?'（':'')+fmt(fee)+' + ':'')+trim(eh)+' × '+fmt(rate)+(fee>0&&lp<100?'）':'')+(lp<100?' × '+trim(lp)+'%':'')+' = '+fmt(pay)+' 元';
+      if(st.long==='yes')rows.push([st.lessons+' 堂合計',fmt(pay*st.lessons)+' 元']);
+      $('payLabel').textContent='這堂課的薪水';
+    }else if(ty==='piece'){
+      var full=base,add=0;
+      rows.push(['計價方式',st.mode==='unit'?'單個買':'買斷']);
+      if(x.id==='code'){
+        add=dayAdd();full=base+add;
+        rows.push(['這個難易度的價格',fmt(base)+' 元']);
+        rows.push(['製作天數',st.days+' 天'+(add>0?'，加 '+fmt(add)+' 元':'')]);
+      }
+      if(st.mode==='unit'){
+        var qp=tier(cfg.unit.tiers,st.qty);
+        var unit=Math.round(full*cfg.unit.ratio/100*qp/100);
+        pay=unit;
+        rows.push(['買斷價（對照）',fmt(full)+' 元']);
+        rows.push(['數量','約 '+st.qty+' 個'+(qp<100?'，收 '+trim(qp)+'%':'')]);
+        rows.push([st.qty+' 個合計',fmt(unit*st.qty)+' 元']);
+        formula='買斷價 '+fmt(full)+' × '+trim(cfg.unit.ratio)+'%'+(qp<100?' × '+trim(qp)+'%':'')+' = 一個 '+fmt(unit)+' 元';
+        $('payLabel').textContent='一個的價格';
+      }else{
+        pay=Math.round(full);
+        formula=x.id==='code'&&add>0
+          ? fmt(base)+' + '+fmt(add)+' = '+fmt(pay)+' 元'
+          : trim(avg)+' 級的價格 = '+fmt(pay)+' 元';
+        $('payLabel').textContent='買斷金額';
+      }
+    }else{
+      pay=Math.round(base);
+      formula=trim(avg)+' 級的價格 = '+fmt(pay)+' 元';
+      $('payLabel').textContent='這塊板子的金額';
+    }
+
+    var ul=$('rows');ul.textContent='';
+    rows.forEach(function(r,i){
+      var li=el('li'),d=el('div','kv');li.style.setProperty('--i',i);
+      d.appendChild(el('span',null,r[0]));d.appendChild(el('span',null,r[1]));
+      li.appendChild(d);ul.appendChild(li);
+    });
+    $('formula').textContent=formula;
+    var diff=Math.abs(mL-tL);
+    $('gapBox').hidden=diff<5;
+    $('gap').textContent='兩邊的評估差了 '+trim(diff)+' 級。金額照平均計算，建議先談一下這次的內容。';
+    $('hIco').innerHTML=icon(x.id);
+    $('cmpCap').textContent='我 '+trim(mL)+' 級，對方 '+trim(tL)+' 級，平均 '+trim(avg)+' 級';
+    var pos=function(L){return ((L-.5)/15*100)+'%'};
+    var mk=[['mkMe',mL],['mkThey',tL],['mkAvg',avg]];
+    mk.forEach(function(m){var e=$(m[0]);e.style.transition='none';e.style.left=pos(1)});
+    var h=$('hero');h.style.animation='none';void h.offsetWidth;h.style.animation='';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      mk.forEach(function(m){var e=$(m[0]);e.style.transition='';e.style.left=pos(m[1])});
+    })});
+    count(pay);
+  }
+
+  function count(target){
+    var o=$('pay');
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){o.textContent=fmt(target);return}
+    var t0=null,dur=700;
+    function tick(t){
+      if(!t0)t0=t;
+      var p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,4);
+      o.textContent=fmt(target*e);
+      if(p<1)requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  $('primary').addEventListener('click',function(){
+    if(current===2){st.theirs=null;$('summary').textContent=summary();show(3)}
+    else if(current===3){result();show(4)}
+    else{st.sub=null;show(1)}
+  });
+  $('navBack').addEventListener('click',function(){show(current===2?1:2)});
+
+  /* 設定 */
+  function numInput(path){
+    var i=el('input');i.type='number';i.inputMode='decimal';i.min='0';i.step='any';i.dataset.p=path;
+    i.addEventListener('focus',function(){try{i.select()}catch(e){}});
+    return i;
+  }
+  (function build(){
+    var body=$('setBody');
+    SCHEMA.forEach(function(g){
+      body.appendChild(el('div','head',g.t));
+      var grp=el('div','group');
+      (g.f||[]).forEach(function(x){
+        var l=el('label','row set');l.appendChild(el('span',null,x[1]));l.appendChild(numInput(x[0]));grp.appendChild(l);
+      });
+      (g.pairs||[]).forEach(function(x){
+        var d=el('div','row set pair');
+        d.appendChild(el('span',null,'滿'));
+        var a=numInput(x[0]+'.0');a.setAttribute('aria-label','門檻（'+x[1]+'）');d.appendChild(a);
+        d.appendChild(el('span',null,x[1]+'，收'));
+        var b=numInput(x[0]+'.1');b.setAttribute('aria-label','收取百分比');d.appendChild(b);
+        d.appendChild(el('span',null,'%'));
+        grp.appendChild(d);
+      });
+      body.appendChild(grp);
+    });
+  })();
+  function fill(s){
+    document.querySelectorAll('#setBody input').forEach(function(i){i.value=getP(s,i.dataset.p)});
+    $('err').textContent='';
+  }
+  function closeSet(){
+    if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+    document.body.classList.remove('open');
+  }
+  $('openSet').addEventListener('click',function(){fill(cfg);document.querySelector('.sheet-scroll').scrollTop=0;document.body.classList.add('open')});
+  $('veil').addEventListener('click',closeSet);
+  $('cancelSet').addEventListener('click',closeSet);
+  $('resetSet').addEventListener('click',function(){fill(DEFAULTS)});
+  $('saveSet').addEventListener('click',function(){
+    var n=clone(cfg);
+    document.querySelectorAll('#setBody input').forEach(function(i){setP(n,i.dataset.p,parseFloat(i.value))});
+    if(!valid(n)){
+      $('err').textContent='有欄位是空的或不合理。最低價要大於 0，最高價不能低於最低價，權重不能全部是 0。';
+      document.querySelector('.sheet-scroll').scrollTop=0;return;
+    }
+    cfg=n;save(cfg);closeSet();paintSubjects();paint();
+    if(current===4)result();
+  });
+
+  /* 手感：關掉雙指縮放，讓按下的回饋在 iOS 上生效 */
+  document.addEventListener('gesturestart',function(e){e.preventDefault()});
+  document.addEventListener('touchstart',function(){},{passive:true});
+
+  for(var ti=0;ti<15;ti++)$('cmpTicks').appendChild(el('i'));
+  paintSubjects();paint();
+})();
+</script>
+</body>
+</html>
