@@ -53,5 +53,6 @@
 
 已決定：GitHub 帳號 `robinrn0419`；App ID `io.github.robinrn0419.classpay`（不要再改）；App 名稱「課堂薪水」；專案根目錄就是 `class-pay-app/`。
 
-**目前進度：階段 1 完成（2026-10-08），下一步是階段 2。** 階段 1 結果：Capacitor 8.5.3（core、ios、cli），`npx cap add ios` 產生 `ios/`，原生套件用 Swift Package Manager（不用 CocoaPods）；本機 Git 已建立並完成第一筆 commit（分支 main，尚未推上 GitHub）。Git 身分：robinrn0419／321250246+robinrn0419@users.noreply.github.com。改了 `www/` 之後要跑 `npx cap sync` 才會複製進 `ios/`。
+**目前進度：階段 2 完成（2026-10-08），下一步是階段 3。** 階段 2 結果：@capacitor/haptics 8.0.2，`index.html` 用 `Capacitor.Plugins.Haptics`（網頁版自動略過）；量尺 selection、按鈕 impact、結果 notification（差 5 級以上 WARNING）；左緣 16px 滑回、跟手、放開過半或快甩才返回，「對方評估」頁禁止滑回。網頁版 `web-offline/` 同步（只多 PWA 設定），sw.js 已改 `class-pay-v6`，但尚未部署到 GitHub Pages。
+階段 1： 階段 1 結果：Capacitor 8.5.3（core、ios、cli），`npx cap add ios` 產生 `ios/`，原生套件用 Swift Package Manager（不用 CocoaPods）；本機 Git 已建立並完成第一筆 commit（分支 main，尚未推上 GitHub）。Git 身分：robinrn0419／321250246+robinrn0419@users.noreply.github.com。改了 `www/` 之後要跑 `npx cap sync` 才會複製進 `ios/`。
 階段 0： 已安裝：Node.js v24.21.0、npm 11.19.0、Git 2.55.0、VS Code 1.132.1；PowerShell 執行原則已設為 CurrentUser RemoteSigned。 使用者的 iOS 版本：27.2 公開 Beta 版（2026-10-08 回報）。階段 4 前要先確認 SideStore 是否支援此版本。

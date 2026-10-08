@@ -411,6 +411,21 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
   };
   function icon(id,cls){return '<svg class="'+(cls||'')+'" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+ICON[id]+'"/></svg>'}
   function bump(e){e.classList.remove('bump');void e.offsetWidth;e.classList.add('bump')}
+
+  /* 震動：只有在 App 裡才有，網頁版會自動略過 */
+  var HAP=null;
+  try{if(window.Capacitor&&Capacitor.isNativePlatform())HAP=Capacitor.Plugins.Haptics}catch(e){}
+  function haptic(fn,arg){
+    if(!HAP)return;
+    try{var r=HAP[fn](arg);if(r&&r.catch)r.catch(function(){})}catch(e){}
+  }
+  var buzz={
+    tap:function(s){haptic('impact',{style:s||'LIGHT'})},  /* 輕敲：LIGHT、MEDIUM、HEAVY */
+    note:function(t){haptic('notification',{type:t})},     /* 通知：SUCCESS、WARNING、ERROR */
+    selStart:function(){haptic('selectionStart')},         /* 量尺：按下、每換一級、放開 */
+    tick:function(){haptic('selectionChanged')},
+    selEnd:function(){haptic('selectionEnd')}
+  };
   function rangeText(x){var c=cfg[x.id];return fmt(c.min)+'–'+fmt(c.max)+(x.type==='teach'?' 元／時':' 元')}
   var CHEV='<svg viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l6 6-6 6"/></svg>';
   var $=function(id){return document.getElementById(id)};
@@ -495,6 +510,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       var t=el('span');t.appendChild(el('b',null,x.name));t.appendChild(el('small',null,rangeText(x)));
       b.appendChild(t);
       b.addEventListener('click',function(){
+        buzz.tap();
         st.sub=x.id;st.mine=st.p0=st.p1=st.p2=st.theirs=null;show(2);
       });
       box.appendChild(b);
@@ -515,11 +531,14 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     function pick(e){
       var b=r.getBoundingClientRect();
       var v=Math.min(15,Math.max(1,Math.floor((e.clientX-b.left)/b.width*15)+1));
-      if(st[k]!==v){st[k]=v;paint()}
+      if(st[k]!==v){st[k]=v;paint();buzz.tick()}
     }
-    r.addEventListener('pointerdown',function(e){down=true;try{r.setPointerCapture(e.pointerId)}catch(_){ }pick(e)});
+    r.addEventListener('pointerdown',function(e){
+      if(e.pointerType==='touch'&&atEdge(e.clientX))return;  /* 讓給左緣滑回 */
+      down=true;try{r.setPointerCapture(e.pointerId)}catch(_){ }buzz.selStart();pick(e);
+    });
     r.addEventListener('pointermove',function(e){if(down)pick(e)});
-    ['pointerup','pointercancel'].forEach(function(n){r.addEventListener(n,function(){down=false})});
+    ['pointerup','pointercancel'].forEach(function(n){r.addEventListener(n,function(){if(down)buzz.selEnd();down=false})});
     r.addEventListener('keydown',function(e){
       var d=(e.key==='ArrowRight'||e.key==='ArrowUp')?1:(e.key==='ArrowLeft'||e.key==='ArrowDown')?-1:0;
       if(!d)return;e.preventDefault();
@@ -600,7 +619,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       var k=b.dataset.k;
       var old=st[k];
       st[k]=Math.min(LIM[k][1],Math.max(LIM[k][0],st[k]+(+b.dataset.d)));paint();
-      if(st[k]!==old)bump($(k));
+      if(st[k]!==old){bump($(k));buzz.tap()}
     });
   });
   ['qty','lessons','days'].forEach(function(k){
@@ -614,11 +633,11 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
   });
   document.querySelectorAll('.seg').forEach(function(c){
     c.addEventListener('click',function(e){
-      var b=e.target.closest('button');if(!b)return;
-      st[c.dataset.k]=b.dataset.v;paint();
+      var b=e.target.closest('button');if(!b||st[c.dataset.k]===b.dataset.v)return;
+      st[c.dataset.k]=b.dataset.v;paint();buzz.tap();
     });
   });
-  $('longSw').addEventListener('click',function(){st.long=st.long==='yes'?'no':'yes';paint()});
+  $('longSw').addEventListener('click',function(){st.long=st.long==='yes'?'no':'yes';paint();buzz.tap()});
 
   function show(n){
     $('shell').classList.toggle('back',n<current);
@@ -723,6 +742,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       mk.forEach(function(m){var e=$(m[0]);e.style.transition='';e.style.left=pos(m[1])});
     })});
     count(pay);
+    return diff;
   }
 
   function count(target){
@@ -739,11 +759,56 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
   }
 
   $('primary').addEventListener('click',function(){
-    if(current===2){st.theirs=null;$('summary').textContent=summary();show(3)}
-    else if(current===3){result();show(4)}
-    else{st.sub=null;show(1)}
+    if(current===2){buzz.tap('MEDIUM');st.theirs=null;$('summary').textContent=summary();show(3)}
+    else if(current===3){var gap=result();show(4);buzz.note(gap>=5?'WARNING':'SUCCESS')}
+    else{buzz.tap();st.sub=null;show(1)}
   });
-  $('navBack').addEventListener('click',function(){show(current===2?1:2)});
+  function goBack(){buzz.tap();show(current===2?1:2)}
+  $('navBack').addEventListener('click',goBack);
+
+  /* 從左緣滑回上一頁：頁面跟著手指移動，放開時超過一半或滑得快就返回 */
+  var EDGE=16;
+  function atEdge(x){
+    return x<EDGE&&(current===2||current===4)&&!document.body.classList.contains('open');  /* 對方評估頁不能滑回 */
+  }
+  var drag=null,moving=[$('scroll'),$('dock')];
+  function slide(x,anim){
+    moving.forEach(function(e){
+      e.style.transition=anim?'transform .25s var(--ease),opacity .25s var(--ease)':'none';
+      e.style.transform=x?'translateX('+x+'px)':'';
+      e.style.opacity=x?String(1-x/innerWidth*.6):'';
+    });
+  }
+  document.addEventListener('touchstart',function(e){
+    var t=e.touches[0];
+    drag=e.touches.length===1&&atEdge(t.clientX)?{x0:t.clientX,y0:t.clientY,dx:0,on:false,lx:t.clientX,lt:e.timeStamp,v:0}:null;
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!drag)return;
+    var t=e.touches[0],dx=t.clientX-drag.x0,dy=t.clientY-drag.y0;
+    if(!drag.on){
+      if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){drag=null;return}  /* 上下捲動，不是滑回 */
+      if(dx<10)return;
+      drag.on=true;
+    }
+    e.preventDefault();
+    var dt=e.timeStamp-drag.lt;
+    if(dt>0)drag.v=(t.clientX-drag.lx)/dt;  /* 速度：每毫秒幾 px */
+    drag.lx=t.clientX;drag.lt=e.timeStamp;
+    drag.dx=Math.max(0,dx);
+    slide(drag.dx,false);
+  },{passive:false});
+  function endDrag(e){
+    var d=drag;drag=null;
+    if(!d||!d.on)return;
+    var v=e.timeStamp-d.lt>100?0:d.v;  /* 手指停住再放開，不算快滑 */
+    var go=e.type==='touchend'&&(d.dx>innerWidth/2||(v>.5&&d.dx>30));
+    if(!go){slide(0,true);return}
+    slide(innerWidth,true);
+    setTimeout(function(){slide(0,false);goBack()},250);
+  }
+  document.addEventListener('touchend',endDrag);
+  document.addEventListener('touchcancel',endDrag);
 
   /* 設定 */
   function numInput(path){
