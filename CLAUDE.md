@@ -42,6 +42,8 @@
 - **免費 Apple ID + SideStore** 安裝，手機上用「捷徑」每天自動續簽（使用者覺得 99 美元太貴、每 7 天接電腦太麻煩）。
 - 之後用 SideStore「來源」功能做一鍵更新（Actions 打包完自動更新來源清單）。
 
+階段 4 前查證（2026-10-08）：SideStore 官方說 iOS 27 已支援（issue #1566），但仍有部分使用者 iOS 27 登入失敗（#1604，未解）；27.2 Beta 沒有專門資料。官方最新是 0.7.0-alpha（0.6.4 以前登入壞掉，不能用）。電腦端官方工具改成 **iloader**（github.com/nab138/iloader），Windows 只需要 iTunes **或** Apple Devices App（Microsoft Store 版可以），不再需要 iCloud。使用者電腦已有 Apple Devices App。不要用非官方的 SideInstaller。iloader 預設 anisette 伺服器 ani.sidestore.io 登入失敗（WebSocket connection reset），在 iloader 設定改成 **StikStore** 後成功（2026-10-08）。
+**階段 4 卡關點（2026-10-08）：** iloader 已把 SideStore 裝進手機，已信任開發者、開了開發者模式。SideStore 內登入時，簽名用 Apple ID 沒有任何受信任裝置，推播收不到驗證碼；改簡訊時 Apple 回「目前無法傳送驗證碼至此電話號碼，請稍後再試」（短時間要太多次驗證碼被限流）。決定：停手等約 24 小時，再只試一次（SideStore 選簡訊，或瀏覽器登入 account.apple.com 取得簡訊碼後輸入 SideStore）。注意：iPhone 設定裡的「取得驗證碼」是主帳號的碼，不適用。SideStore 7 天期限約到 2026-10-15，之前要登入續簽，否則要接電腦用 iloader 重裝。還沒做：LocalDevVPN 連線、確認 SideStore 版本 ≥0.7.0、手動續簽、加入來源、裝課堂薪水。下面「iTunes／iCloud 要用官網版」那條已過時。
 已經提醒過使用者的注意事項：建議另開一個專門簽名用的 Apple ID；只從 sidestore.io、altstore.io 下載；配對檔不可外流；iOS 大改版先別急著升級；iTunes／iCloud 要用 Apple 官網版本而非 Microsoft Store 版；刪掉 App 設定會消失（計畫加「匯出／匯入設定」）。
 
 階段（一次只做一個）：
