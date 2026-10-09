@@ -12,7 +12,7 @@
 ## 資料夾內容
 - `www/index.html`：目前最新的完整 App（單一 HTML 檔，沒有外部依賴，系統字體，可離線）。
 - `www/icon.png`：App 圖示（512×512）。
-- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v5`，更新網頁版時要加一。
+- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v6`，更新網頁版時要加一。
 
 ## App 現在的功能
 四步流程：選內容 → 我評估 → 對方評估（看不到我的答案）→ 結果。
@@ -43,7 +43,11 @@
 - 之後用 SideStore「來源」功能做一鍵更新（Actions 打包完自動更新來源清單）。
 
 階段 4 前查證（2026-10-08）：SideStore 官方說 iOS 27 已支援（issue #1566），但仍有部分使用者 iOS 27 登入失敗（#1604，未解）；27.2 Beta 沒有專門資料。官方最新是 0.7.0-alpha（0.6.4 以前登入壞掉，不能用）。電腦端官方工具改成 **iloader**（github.com/nab138/iloader），Windows 只需要 iTunes **或** Apple Devices App（Microsoft Store 版可以），不再需要 iCloud。使用者電腦已有 Apple Devices App。不要用非官方的 SideInstaller。iloader 預設 anisette 伺服器 ani.sidestore.io 登入失敗（WebSocket connection reset），在 iloader 設定改成 **StikStore** 後成功（2026-10-08）。
-**階段 4 卡關點（2026-10-08）：** iloader 已把 SideStore 裝進手機，已信任開發者、開了開發者模式。SideStore 內登入時，簽名用 Apple ID 沒有任何受信任裝置，推播收不到驗證碼；改簡訊時 Apple 回「目前無法傳送驗證碼至此電話號碼，請稍後再試」（短時間要太多次驗證碼被限流）。決定：停手等約 24 小時，再只試一次（SideStore 選簡訊，或瀏覽器登入 account.apple.com 取得簡訊碼後輸入 SideStore）。注意：iPhone 設定裡的「取得驗證碼」是主帳號的碼，不適用。SideStore 7 天期限約到 2026-10-15，之前要登入續簽，否則要接電腦用 iloader 重裝。還沒做：LocalDevVPN 連線、確認 SideStore 版本 ≥0.7.0、手動續簽、加入來源、裝課堂薪水。下面「iTunes／iCloud 要用官網版」那條已過時。
+**階段 4 進度（2026-10-09）：課堂薪水 v1.0.2 已用 SideStore 0.7.0（Stable）裝上 iPhone，主畫面顯示「課堂薪水」。** 剩下：使用者實測震動／滑回、設定「捷徑」自動續簽。
+- SideStore 0.7.0-alpha 會直接拿 CFBundleDisplayName 去註冊 App ID，中文被 Apple 拒（`appIdName` invalid）。nightly（0.7.0-20260920）修好中文名，但 iloader 放不進配對檔（SideStore issue #1611），所以退回 Stable。解法：Info.plist 的 CFBundleDisplayName 改 `ClassPay`，`ios/App/App/en.lproj` 與 `zh-Hant.lproj/InfoPlist.strings` 設成「課堂薪水」（已加進 project.pbxproj）。**使用者不接受主畫面出現英文名稱**，以後別提議改成英文。
+- 換 SideStore 版本後要在 iloader「Manage Pairing File → SideStore → Place」重放配對檔（不要按 Export）。
+- 驗證碼：簽名用 Apple ID 沒有受信任裝置，只能收簡訊；短時間要太多次會被 Apple 限流一天。
+**階段 4 卡關點（2026-10-08，已解決）：** iloader 已把 SideStore 裝進手機，已信任開發者、開了開發者模式。SideStore 內登入時，簽名用 Apple ID 沒有任何受信任裝置，推播收不到驗證碼；改簡訊時 Apple 回「目前無法傳送驗證碼至此電話號碼，請稍後再試」（短時間要太多次驗證碼被限流）。決定：停手等約 24 小時，再只試一次（SideStore 選簡訊，或瀏覽器登入 account.apple.com 取得簡訊碼後輸入 SideStore）。注意：iPhone 設定裡的「取得驗證碼」是主帳號的碼，不適用。SideStore 7 天期限約到 2026-10-15，之前要登入續簽，否則要接電腦用 iloader 重裝。還沒做：LocalDevVPN 連線、確認 SideStore 版本 ≥0.7.0、手動續簽、加入來源、裝課堂薪水。下面「iTunes／iCloud 要用官網版」那條已過時。
 已經提醒過使用者的注意事項：建議另開一個專門簽名用的 Apple ID；只從 sidestore.io、altstore.io 下載；配對檔不可外流；iOS 大改版先別急著升級；iTunes／iCloud 要用 Apple 官網版本而非 Microsoft Store 版；刪掉 App 設定會消失（計畫加「匯出／匯入設定」）。
 
 階段（一次只做一個）：
