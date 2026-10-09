@@ -12,7 +12,7 @@
 ## 資料夾內容
 - `www/index.html`：目前最新的完整 App（單一 HTML 檔，沒有外部依賴，系統字體，可離線）。
 - `www/icon.png`：App 圖示（512×512）。
-- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v7`，更新網頁版時要加一。
+- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v8`，更新網頁版時要加一。
 
 ## App 現在的功能
 四步流程：選內容 → 我評估 → 對方評估（看不到我的答案）→ 結果。
@@ -49,10 +49,11 @@
 
 ### index.html 的原生手感（www 和 web-offline 都有）
 - 震動走 `Capacitor.Plugins.Haptics`，網頁版自動略過。量尺按下／換級 selection；加減鈕、開關、分段、選內容、返回 impact LIGHT；交給對方 MEDIUM；結果：差不到 5 級 notification SUCCESS，差 5 級以上 `buzz.alarm()` 重重三下（HEAVY ×3，間隔 150ms，使用者說原本 WARNING 和 SUCCESS 分不出來）。
+- **紀錄**（2026-10-09 加）：每次算出金額自動存（localStorage key `class-pay-records-v1`，最多 500 筆）；結果頁有「不存入紀錄」↔「改回存入紀錄」；在結果頁按「修改」再算會更新同一筆（`recId`），選新內容或「再算一筆」才開新的一輪。首頁右下角浮動「紀錄」按鈕 → 第 5 頁：最上面當月合計（單個買算單價×數量，教學算這一堂），下面是清單（最新在上），右上「編輯」可刪單筆。不加備註（使用者決定）。
 - 左緣 16px 滑回：跟手、放開過半或快甩才返回（手指停住超過 100ms 不算快甩）；「對方評估」頁禁止滑回（怕對方看到我的答案）。
 
 ### 更新 App 的流程
-1. 改 `www/index.html`，同步到 `web-offline/index.html`（只差 PWA 的 head meta／manifest 和結尾註冊 sw.js），`web-offline/sw.js` 的 VERSION 加一（目前 `class-pay-v7`）。
+1. 改 `www/index.html`，同步到 `web-offline/index.html`（只差 PWA 的 head meta／manifest 和結尾註冊 sw.js），`web-offline/sw.js` 的 VERSION 加一（目前 `class-pay-v8`）。
 2. `npx cap sync` → commit → push，約 2 分鐘後雲端產生新版。
 3. 手機：LocalDevVPN 連線 → SideStore Sources 下拉重新整理 → My Apps 按 UPDATE（設定會保留）。
 
