@@ -422,6 +422,9 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
   var buzz={
     tap:function(s){haptic('impact',{style:s||'LIGHT'})},  /* 輕敲：LIGHT、MEDIUM、HEAVY */
     note:function(t){haptic('notification',{type:t})},     /* 通知：SUCCESS、WARNING、ERROR */
+    alarm:function(){                                       /* 差距太大：重重的三下 */
+      [0,150,300].forEach(function(ms){setTimeout(function(){haptic('impact',{style:'HEAVY'})},ms)});
+    },
     selStart:function(){haptic('selectionStart')},         /* 量尺：按下、每換一級、放開 */
     tick:function(){haptic('selectionChanged')},
     selEnd:function(){haptic('selectionEnd')}
@@ -760,7 +763,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
 
   $('primary').addEventListener('click',function(){
     if(current===2){buzz.tap('MEDIUM');st.theirs=null;$('summary').textContent=summary();show(3)}
-    else if(current===3){var gap=result();show(4);buzz.note(gap>=5?'WARNING':'SUCCESS')}
+    else if(current===3){var gap=result();show(4);if(gap>=5)buzz.alarm();else buzz.note('SUCCESS')}
     else{buzz.tap();st.sub=null;show(1)}
   });
   function goBack(){buzz.tap();show(current===2?1:2)}
