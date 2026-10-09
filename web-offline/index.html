@@ -282,7 +282,11 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
 .rec-main b{display:block;font-weight:600}
 .rec-main small{display:block;font-size:13px;color:var(--sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .rec-amt{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-.rec-del{flex:none;width:24px;height:24px;border-radius:50%;background:#FF3B30;color:#FFFFFF;font-size:19px;font-weight:700;line-height:23px}
+.list .rec-del{  /* 蓋掉 .list button 的整行樣式 */
+  flex:none;display:grid;place-items:center;width:24px;height:24px;min-height:0;padding:0;border-radius:50%;
+  background:#FF3B30;color:#FFFFFF;font-size:19px;font-weight:700;line-height:1;
+}
+.list .rec-del:active{background:#D70015}
 .rec-toggle{display:block;width:100%;min-height:50px;text-align:center;color:var(--tint);transition:background .15s}
 .rec-toggle.skip{color:var(--warn)}
 .rec-toggle:active{background:var(--press)}
