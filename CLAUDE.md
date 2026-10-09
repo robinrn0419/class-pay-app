@@ -34,32 +34,39 @@
 - **畫 PCB**：我填選購、原理圖、PCB 設計三項，權重 50/25/25 合成綜合評分；價格 200 × 25^((L−1)/14)，範圍 200–5,000
 - **單個買**（寫程式、3D 建模）：單價 = 買斷價 × 20%，滿 10 個再 × 80%、滿 30 個 × 60%；大數字顯示「一個的價格」，下方列合計
 
-## 下一步：做成 iPhone App
-使用者想要：像 App 的功能（震動回饋、從左緣滑回上一頁），以及學會做 App。
-決定的做法：
-- **Capacitor** 把 `www/` 包成 iOS App。
-- **GitHub Actions 的 macOS runner** 打包出未簽名 `.ipa`（使用者沒有 Mac）。
-- **免費 Apple ID + SideStore** 安裝，手機上用「捷徑」每天自動續簽（使用者覺得 99 美元太貴、每 7 天接電腦太麻煩）。
-- 之後用 SideStore「來源」功能做一鍵更新（Actions 打包完自動更新來源清單）。
+## iPhone App（四個階段全部完成，2026-10-09）
+目前狀態：課堂薪水已用 SideStore 裝在使用者的 iPhone（iOS 27.2 公開 Beta），主畫面顯示「課堂薪水」，「捷徑」每天晚上自動續簽。最新版 v1.0.3。
 
-階段 4 前查證（2026-10-08）：SideStore 官方說 iOS 27 已支援（issue #1566），但仍有部分使用者 iOS 27 登入失敗（#1604，未解）；27.2 Beta 沒有專門資料。官方最新是 0.7.0-alpha（0.6.4 以前登入壞掉，不能用）。電腦端官方工具改成 **iloader**（github.com/nab138/iloader），Windows 只需要 iTunes **或** Apple Devices App（Microsoft Store 版可以），不再需要 iCloud。使用者電腦已有 Apple Devices App。不要用非官方的 SideInstaller。iloader 預設 anisette 伺服器 ani.sidestore.io 登入失敗（WebSocket connection reset），在 iloader 設定改成 **StikStore** 後成功（2026-10-08）。
-**階段 4 進度（2026-10-09）：課堂薪水 v1.0.2 已用 SideStore 0.7.0（Stable）裝上 iPhone，主畫面顯示「課堂薪水」。** 剩下：使用者實測震動／滑回、設定「捷徑」自動續簽。
-- SideStore 0.7.0-alpha 會直接拿 CFBundleDisplayName 去註冊 App ID，中文被 Apple 拒（`appIdName` invalid）。nightly（0.7.0-20260920）修好中文名，但 iloader 放不進配對檔（SideStore issue #1611），所以退回 Stable。解法：Info.plist 的 CFBundleDisplayName 改 `ClassPay`，`ios/App/App/en.lproj` 與 `zh-Hant.lproj/InfoPlist.strings` 設成「課堂薪水」（已加進 project.pbxproj）。**使用者不接受主畫面出現英文名稱**，以後別提議改成英文。
-- 換 SideStore 版本後要在 iloader「Manage Pairing File → SideStore → Place」重放配對檔（不要按 Export）。
-- 驗證碼：簽名用 Apple ID 沒有受信任裝置，只能收簡訊；短時間要太多次會被 Apple 限流一天。
-**階段 4 卡關點（2026-10-08，已解決）：** iloader 已把 SideStore 裝進手機，已信任開發者、開了開發者模式。SideStore 內登入時，簽名用 Apple ID 沒有任何受信任裝置，推播收不到驗證碼；改簡訊時 Apple 回「目前無法傳送驗證碼至此電話號碼，請稍後再試」（短時間要太多次驗證碼被限流）。決定：停手等約 24 小時，再只試一次（SideStore 選簡訊，或瀏覽器登入 account.apple.com 取得簡訊碼後輸入 SideStore）。注意：iPhone 設定裡的「取得驗證碼」是主帳號的碼，不適用。SideStore 7 天期限約到 2026-10-15，之前要登入續簽，否則要接電腦用 iloader 重裝。還沒做：LocalDevVPN 連線、確認 SideStore 版本 ≥0.7.0、手動續簽、加入來源、裝課堂薪水。下面「iTunes／iCloud 要用官網版」那條已過時。
-已經提醒過使用者的注意事項：建議另開一個專門簽名用的 Apple ID；只從 sidestore.io、altstore.io 下載；配對檔不可外流；iOS 大改版先別急著升級；iTunes／iCloud 要用 Apple 官網版本而非 Microsoft Store 版；刪掉 App 設定會消失（計畫加「匯出／匯入設定」）。
+已決定（不要再改）：GitHub 帳號 `robinrn0419`；App ID `io.github.robinrn0419.classpay`；主畫面名稱「課堂薪水」（**使用者不接受主畫面出現英文名稱**，別提議改英文）；專案根目錄就是 `class-pay-app/`。
 
-階段（一次只做一個）：
-0. 準備：Node.js、Git、VS Code
-1. 建 Capacitor 專案，放入 `www/`
-2. 加原生功能：@capacitor/haptics 震動；左緣滑回上一頁
-3. GitHub Actions 雲端打包 `.ipa` ＋ SideStore 來源清單
-4. 設定 SideStore、安裝、設定自動續簽
+### 架構
+- **Capacitor 8.5.3**（core、ios、cli）+ **@capacitor/haptics 8.0.2**，原生套件用 Swift Package Manager（沒有 CocoaPods）。改了 `www/` 要 `npx cap sync`。
+- **名稱**：Info.plist 的 CFBundleDisplayName 是 `ClassPay`（SideStore 0.7.0 拿它向 Apple 註冊 App ID，只收英數字），`ios/App/App/en.lproj`、`zh-Hant.lproj/InfoPlist.strings` 把主畫面名稱設成「課堂薪水」。
+- **圖示**：icon.png 放大成 1024 版；啟動畫面是純色 systemGroupedBackgroundColor。
+- **雲端打包**：`.github/workflows/build.yml`，每次推 main（只改 .md 不觸發）→ macos-latest（Xcode 26.6）不簽名編譯，版本 1.0.<run_number> → `ClassPay.ipa` 放 Releases（tag v1.0.N）→ `web-offline/` + `scripts/make-source.js` 產生的 `source.json` 發布到 GitHub Pages。
+- 網址：repo https://github.com/robinrn0419/class-pay-app ；網頁版 https://robinrn0419.github.io/class-pay-app/ ；SideStore 來源 https://robinrn0419.github.io/class-pay-app/source.json
+- Git 身分：robinrn0419／321250246+robinrn0419@users.noreply.github.com
 
-已決定：GitHub 帳號 `robinrn0419`；App ID `io.github.robinrn0419.classpay`（不要再改）；App 名稱「課堂薪水」；專案根目錄就是 `class-pay-app/`。
+### index.html 的原生手感（www 和 web-offline 都有）
+- 震動走 `Capacitor.Plugins.Haptics`，網頁版自動略過。量尺按下／換級 selection；加減鈕、開關、分段、選內容、返回 impact LIGHT；交給對方 MEDIUM；結果：差不到 5 級 notification SUCCESS，差 5 級以上 `buzz.alarm()` 重重三下（HEAVY ×3，間隔 150ms，使用者說原本 WARNING 和 SUCCESS 分不出來）。
+- 左緣 16px 滑回：跟手、放開過半或快甩才返回（手指停住超過 100ms 不算快甩）；「對方評估」頁禁止滑回（怕對方看到我的答案）。
 
-**目前進度：階段 3 完成（2026-10-08），下一步是階段 4。** 階段 3 結果：公開 repo https://github.com/robinrn0419/class-pay-app ；`.github/workflows/build.yml` 每次推 main（只改 .md 不觸發）就在 macos-latest（Xcode 26.6）不簽名編譯，版本號 1.0.<run_number>，`ClassPay.ipa` 放 Releases（tag v1.0.N）；接著把 `web-offline/` 加上 `scripts/make-source.js` 產生的 `source.json` 發布到 GitHub Pages。網頁版：https://robinrn0419.github.io/class-pay-app/ ；SideStore 來源：https://robinrn0419.github.io/class-pay-app/source.json 。App 圖示換成 icon.png 放大的 1024 版；啟動畫面改成純色 systemGroupedBackgroundColor（刪了 Capacitor 預設 Splash）。第一版 v1.0.1 已驗證：含 HapticsPlugin、Bundle ID 正確。
-階段 2： 階段 2 結果：@capacitor/haptics 8.0.2，`index.html` 用 `Capacitor.Plugins.Haptics`（網頁版自動略過）；量尺 selection、按鈕 impact、結果 notification（差 5 級以上 WARNING）；左緣 16px 滑回、跟手、放開過半或快甩才返回，「對方評估」頁禁止滑回。網頁版 `web-offline/` 同步（只多 PWA 設定），sw.js 已改 `class-pay-v6`，但尚未部署到 GitHub Pages。
-階段 1： 階段 1 結果：Capacitor 8.5.3（core、ios、cli），`npx cap add ios` 產生 `ios/`，原生套件用 Swift Package Manager（不用 CocoaPods）；本機 Git 已建立並完成第一筆 commit（分支 main，尚未推上 GitHub）。Git 身分：robinrn0419／321250246+robinrn0419@users.noreply.github.com。改了 `www/` 之後要跑 `npx cap sync` 才會複製進 `ios/`。
-階段 0： 已安裝：Node.js v24.21.0、npm 11.19.0、Git 2.55.0、VS Code 1.132.1；PowerShell 執行原則已設為 CurrentUser RemoteSigned。 使用者的 iOS 版本：27.2 公開 Beta 版（2026-10-08 回報）。階段 4 前要先確認 SideStore 是否支援此版本。
+### 更新 App 的流程
+1. 改 `www/index.html`，同步到 `web-offline/index.html`（只差 PWA 的 head meta／manifest 和結尾註冊 sw.js），`web-offline/sw.js` 的 VERSION 加一（目前 `class-pay-v7`）。
+2. `npx cap sync` → commit → push，約 2 分鐘後雲端產生新版。
+3. 手機：LocalDevVPN 連線 → SideStore Sources 下拉重新整理 → My Apps 按 UPDATE（設定會保留）。
+
+### SideStore 的坑（2026-10 實測）
+- 用 **SideStore 0.7.0（Stable）**。nightly（0.7.0-20260920）修好中文名稱，但 iloader 放不進配對檔（issue #1611），所以不用。
+- 電腦端用 **iloader**（github.com/nab138/iloader），Windows 只需要 Apple Devices App（使用者已有）。iloader 的 anisette 伺服器要選 **StikStore**（預設的 ani.sidestore.io 會 WebSocket 斷線）。換 SideStore 版本後要「Manage Pairing File → SideStore → Place」重放配對檔，**不要按 Export**。
+- 簽名用 Apple ID 是另開的，沒有受信任裝置，驗證碼只能收簡訊；短時間要太多次會被 Apple 限流約一天。iPhone 設定裡的「取得驗證碼」是主帳號的，不適用。
+- 自動續簽捷徑「續簽 App」：設定 VPN 連線 LocalDevVPN → 等待 3 秒 → SideStore「Refresh All Apps」；自動化每天 21:00、立即執行、不通知。iOS 27 捷徑若出現 ADI error -45061：SideStore → Settings → User Customizations → Reset adi.db。
+- 不要用非官方的 SideInstaller。
+- 7 天沒續簽 App 會打不開；真的過期就接電腦用 iloader 重裝 SideStore。
+
+### 提醒過使用者的事
+簽名用另一個 Apple ID；SideStore 相關只從官方來源下載；配對檔不可外流；iOS 大改版先別急著升級（先確認 SideStore 支援）；刪掉 App 設定會消失。
+
+### 之後可以做的
+- 「匯出／匯入設定」功能（刪 App 會失去 localStorage 的價格設定）。
+- 使用者想調整手感時（震動強弱、滑回距離）直接改 index.html 的 `buzz` 和 `EDGE`／`go` 判斷。
