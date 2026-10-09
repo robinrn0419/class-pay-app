@@ -1,5 +1,5 @@
 // 課堂薪水：離線快取。更新 index.html 後，把下面的版本號加一，手機第二次打開就會換成新版。
-var VERSION = 'class-pay-v10';
+var VERSION = 'class-pay-v11';
 var CORE = ['./', 'index.html', 'icon.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', function (e) {

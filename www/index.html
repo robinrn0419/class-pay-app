@@ -266,7 +266,11 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
 }
 .fab:active{transform:scale(.94);opacity:.85}
 .fab svg{width:22px;height:22px}
-.rec{position:relative;display:flex;align-items:center;gap:12px;min-height:62px;padding:9px 16px}
+.rec{position:relative;display:flex;align-items:center;gap:12px;min-height:62px;padding:9px 16px;background:var(--card)}
+#recList li{overflow:hidden}
+#recList li + li::before{z-index:1}
+.rec-back{position:absolute;inset:0;display:flex;justify-content:flex-end;background:#FF3B30}
+.list .rec-back-del{width:80px;min-height:0;height:100%;padding:0;justify-content:center;color:#FFFFFF;font-size:15px;font-weight:600}
 .rec .b-ico{width:34px;height:34px;border-radius:9px}
 .rec .b-ico svg{width:21px;height:21px}
 .rec-main{flex:1;min-width:0}
@@ -861,13 +865,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       var d=new Date(r.t),li=el('li'),row=el('div','rec');
       if(recEdit){
         var del=el('button','rec-del');del.type='button';del.setAttribute('aria-label','刪除這筆');
-        del.addEventListener('click',function(){
-          buzz.tap();
-          recs=recs.filter(function(y){return y.id!==r.id});saveRec();
-          if(r.id===recId)recSkip=true;
-          if(!recs.length)recEdit=false;
-          paint();paintRecords();
-        });
+        del.addEventListener('click',function(){buzz.tap();removeRec(r)});
         row.appendChild(del);
       }
       var ico=el('span','b-ico');ico.style.background='var(--c-'+x.id+')';ico.innerHTML=icon(x.id);row.appendChild(ico);
@@ -876,9 +874,71 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       main.appendChild(el('small',null,(d.getMonth()+1)+'/'+d.getDate()+'・'+r.sum+(r.unit?'，一個 '+fmt(r.pay)+' 元':'')));
       row.appendChild(main);
       row.appendChild(el('span','rec-amt',fmt(r.total)+' 元'));
+      var back=el('div','rec-back'),bd=el('button','rec-back-del','刪除');bd.type='button';
+      bd.addEventListener('click',function(){dropRec(li,row,r)});
+      back.appendChild(bd);li.appendChild(back);
       li.appendChild(row);ul.appendChild(li);
+      swipeRow(li,row,r);
     });
+    openRow=null;
   }
+  function removeRec(r){
+    recs=recs.filter(function(y){return y.id!==r.id});saveRec();
+    if(r.id===recId)recSkip=true;
+    if(!recs.length)recEdit=false;
+    paint();paintRecords();
+  }
+
+  /* 紀錄往左滑刪除：滑一點露出刪除鈕，滑過一半放開直接刪 */
+  var openRow=null;  /* 目前露出刪除鈕的那一列 */
+  function slideRow(row,x,anim){
+    row.style.transition=anim?'transform .25s var(--ease)':'none';
+    row.style.transform=x?'translateX('+x+'px)':'';
+  }
+  function closeRow(){if(openRow){slideRow(openRow,0,true);openRow=null}}
+  function dropRec(li,row,r){
+    buzz.tap();openRow=null;
+    slideRow(row,-li.offsetWidth,true);
+    li.style.height=li.offsetHeight+'px';
+    setTimeout(function(){li.style.transition='height .2s var(--ease)';li.style.height='0'},150);
+    setTimeout(function(){removeRec(r)},360);
+  }
+  function swipeRow(li,row,r){
+    var s=null,W=80;
+    row.addEventListener('touchstart',function(e){
+      if(recEdit||e.touches.length!==1)return;
+      if(openRow&&openRow!==row)closeRow();
+      var t=e.touches[0];
+      s={x0:t.clientX,y0:t.clientY,base:openRow===row?-W:0,dx:0,on:false,far:false};
+    },{passive:true});
+    row.addEventListener('touchmove',function(e){
+      if(!s)return;
+      var t=e.touches[0],dx=t.clientX-s.x0,dy=t.clientY-s.y0;
+      if(!s.on){
+        if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){s=null;return}  /* 上下捲動 */
+        if(Math.abs(dx)<10)return;
+        s.on=true;
+      }
+      e.preventDefault();
+      s.dx=Math.min(0,s.base+dx);
+      var far=-s.dx>li.offsetWidth/2;
+      if(far!==s.far){s.far=far;if(far)buzz.tap('MEDIUM')}  /* 過一半震一下：放開就刪 */
+      slideRow(row,s.dx,false);
+    },{passive:false});
+    function end(e){
+      var d=s;s=null;
+      if(!d||!d.on)return;
+      if(e.type==='touchend'&&d.far){dropRec(li,row,r);return}
+      if(e.type==='touchend'&&-d.dx>W/2){slideRow(row,-W,true);openRow=row}
+      else{slideRow(row,0,true);if(openRow===row)openRow=null}
+    }
+    row.addEventListener('touchend',end);
+    row.addEventListener('touchcancel',end);
+    row.addEventListener('click',function(){if(openRow===row)closeRow()});
+  }
+  document.addEventListener('touchstart',function(e){
+    if(openRow&&!openRow.parentNode.contains(e.target))closeRow();
+  },{passive:true});
   $('recFab').addEventListener('click',function(){buzz.tap();recEdit=false;paintRecords();show(5)});
   $('editRec').addEventListener('click',function(){buzz.tap();recEdit=!recEdit;paint();paintRecords()});
   $('recToggle').addEventListener('click',function(){
