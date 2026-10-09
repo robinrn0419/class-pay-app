@@ -65,8 +65,7 @@
 - 7 天沒續簽 App 會打不開；真的過期就接電腦用 iloader 重裝 SideStore。
 
 ### 提醒過使用者的事
-簽名用另一個 Apple ID；SideStore 相關只從官方來源下載；配對檔不可外流；iOS 大改版先別急著升級（先確認 SideStore 支援）；刪掉 App 設定會消失。
+簽名用另一個 Apple ID；SideStore 相關只從官方來源下載；配對檔不可外流；iOS 大改版先別急著升級（先確認 SideStore 支援）；刪掉 App 設定會消失（使用者 2026-10-09 決定**不要**「匯出／匯入設定」功能，不要再提議）。
 
 ### 之後可以做的
-- 「匯出／匯入設定」功能（刪 App 會失去 localStorage 的價格設定）。
 - 使用者想調整手感時（震動強弱、滑回距離）直接改 index.html 的 `buzz` 和 `EDGE`／`go` 判斷。
