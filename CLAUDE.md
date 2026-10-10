@@ -76,4 +76,4 @@
 - 原生外掛 `SharedBox`（寫在 `ios/App/App/AppDelegate.swift` 後面，和記一筆同一段；`SceneDelegate.swift` 的 rootViewController 改成 `MainViewController()`，`Main.storyboard` 沒被用到），共用儲存區（App Group）原名 `group.io.github.robinrn0419.shared`，寫在 `ios/App/App/App.entitlements`。
 - `build.yml` 編譯後用臨時簽名把 entitlements 寫進 App（SideStore 從簽名讀要註冊哪些 App Group）。
 - 每次 `saveRec()` 和開 App 時，紀錄另外寫一份 `class-pay-records.json` 到共用儲存區；紀錄頁底下顯示「記一筆讀得到／讀不到」（只有 App 版）。
-- v1.0.8 漏改 SceneDelegate，SharedBox 沒掛上；修正版等真機測試。
+- v1.0.8 漏改 SceneDelegate，SharedBox 沒掛上；v1.0.9 真機測試共用儲存區可以用（2026-10-10）。
