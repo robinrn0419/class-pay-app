@@ -420,6 +420,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       </div>
       <div class="group" id="recBox"><ul class="list" id="recList"></ul></div>
       <p class="foot" id="recEmpty">還沒有紀錄。每次算出金額都會自動存進來。</p>
+      <p class="foot" id="boxNote" hidden></p>
     </section>
   </main>
 
@@ -541,8 +542,18 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
   /* 紀錄：每次算出金額自動存，結果頁可以改成不存 */
   var RKEY='class-pay-records-v1';
   function loadRec(){try{var a=JSON.parse(localStorage.getItem(RKEY));return Array.isArray(a)?a:[]}catch(e){return []}}
-  function saveRec(){try{localStorage.setItem(RKEY,JSON.stringify(recs))}catch(e){}}
+  function saveRec(){try{localStorage.setItem(RKEY,JSON.stringify(recs))}catch(e){}shareRec()}
   var recs=loadRec();
+
+  /* 共用儲存區（只有 App 版有）：紀錄另外寫一份 class-pay-records.json，給記一筆匯入 */
+  var BOX=null,boxState='';
+  try{if(window.Capacitor&&Capacitor.isNativePlatform())BOX=Capacitor.Plugins.SharedBox}catch(e){}
+  function shareRec(){
+    if(!BOX)return;
+    BOX.write({name:'class-pay-records.json',text:JSON.stringify({app:'課堂薪水',v:1,at:new Date().toISOString(),recs:recs})})
+      .then(function(){boxState='ok'},function(e){boxState=String(e&&e.message||e)});
+  }
+  shareRec();
   var recId=null,recSkip=false,lastCalc=null,recEdit=false;  /* recId：這一輪計算存的是哪一筆 */
   function newRound(){recId=null;recSkip=false}
   function storeCalc(){
@@ -868,6 +879,8 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     $('monthCount').textContent='這個月共 '+n+' 筆';
     $('recBox').hidden=!recs.length;
     $('recEmpty').hidden=!!recs.length;
+    $('boxNote').hidden=!BOX;
+    $('boxNote').textContent=boxState==='ok'?'記一筆讀得到這些紀錄。':'記一筆還讀不到這些紀錄'+(boxState?'：'+boxState:'')+'。';
     var ul=$('recList');ul.textContent='';
     recs.forEach(function(r){
       var x=SUBJECTS.filter(function(s){return s.id===r.sub})[0];if(!x)return;
