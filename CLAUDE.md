@@ -71,7 +71,7 @@
 ### 之後可以做的
 - 使用者想調整手感時（震動強弱、滑回距離）直接改 index.html 的 `buzz` 和 `EDGE`／`go` 判斷。
 
-## 給記一筆匯入（2026-10-10 起，記一筆階段 7）
+## 給記一筆匯入（2026-10-10 完成，記一筆階段 7；v1.0.10 真機測試正常）
 記一筆（`C:\Users\user\Documents\ledger-app\`，另一個獨立 App）要自動匯入課堂薪水的紀錄，細節和使用者的決定記在**記一筆的 CLAUDE.md**。這邊改了：
 - 原生外掛 `SharedBox`（寫在 `ios/App/App/AppDelegate.swift` 後面，和記一筆同一段；`SceneDelegate.swift` 的 rootViewController 改成 `MainViewController()`，`Main.storyboard` 沒被用到），共用儲存區（App Group）原名 `group.io.github.robinrn0419.shared`，寫在 `ios/App/App/App.entitlements`。
 - `build.yml` 編譯後用臨時簽名把 entitlements 寫進 App（SideStore 從簽名讀要註冊哪些 App Group）。
