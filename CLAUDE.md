@@ -12,7 +12,7 @@
 ## 資料夾內容
 - `www/index.html`：目前最新的完整 App（單一 HTML 檔，沒有外部依賴，系統字體，可離線）。
 - `www/icon.png`：App 圖示（512×512）。
-- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v13`，更新網頁版時要加一。
+- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v14`，更新網頁版時要加一。
 
 ## App 現在的功能
 四步流程：選內容 → 我評估 → 對方評估（看不到我的答案）→ 結果。
@@ -50,10 +50,11 @@
 ### index.html 的原生手感（www 和 web-offline 都有）
 - 震動走 `Capacitor.Plugins.Haptics`，網頁版自動略過。量尺按下／換級 selection；加減鈕、開關、分段、選內容、返回 impact LIGHT；交給對方 MEDIUM；結果：差不到 5 級 notification SUCCESS，差 5 級以上 `buzz.alarm()` 重重三下（HEAVY ×3，間隔 150ms，使用者說原本 WARNING 和 SUCCESS 分不出來）。
 - **紀錄**（2026-10-09 加）：每次算出金額自動存（localStorage key `class-pay-records-v1`，最多 500 筆）；結果頁有「不存入紀錄」↔「改回存入紀錄」；在結果頁按「修改」再算會更新同一筆（`recId`），選新內容或「再算一筆」才開新的一輪。首頁右下角浮動「紀錄」按鈕 → 第 5 頁：最上面當月合計（單個買算單價×數量，教學算這一堂），下面是清單（最新在上），右上「編輯」可刪單筆，也可以往左滑刪除（滑一點露出「刪除」鈕，滑過一半震一下、放開直接刪；使用者要求兩種都保留）。不加備註（使用者決定）。
+- **實際收到**（2026-10-11 加）：紀錄多選填欄位 `paid`（實際收到的金額，沒填＝照算出的 `total`；填的和 total 一樣就刪掉 paid）。結果頁公式下面一列「實際收到 [輸入框] 元」（「不存入紀錄」時藏起來），紀錄頁點一筆用 `prompt()` 改（留空＝照算出的，可以填 0）。當月合計、清單金額、記一筆匯入都用 `got(r)`（有 paid 用 paid）；清單小字多「算出 N 元」。按「修改」重算時 paid 保留。
 - 左緣 16px 滑回：跟手、放開過半或快甩才返回（手指停住超過 100ms 不算快甩）；「對方評估」頁禁止滑回（怕對方看到我的答案）。
 
 ### 更新 App 的流程
-1. 改 `www/index.html`，同步到 `web-offline/index.html`（只差 PWA 的 head meta／manifest 和結尾註冊 sw.js），`web-offline/sw.js` 的 VERSION 加一（目前 `class-pay-v13`）。
+1. 改 `www/index.html`，同步到 `web-offline/index.html`（只差 PWA 的 head meta／manifest 和結尾註冊 sw.js），`web-offline/sw.js` 的 VERSION 加一（目前 `class-pay-v14`）。
 2. `npx cap sync` → commit → push，約 2 分鐘後雲端產生新版。
 3. 手機：LocalDevVPN 連線 → SideStore Sources 下拉重新整理 → My Apps 按 UPDATE（設定會保留）。
 
@@ -62,6 +63,7 @@
 - 電腦端用 **iloader**（github.com/nab138/iloader），Windows 只需要 Apple Devices App（使用者已有）。iloader 的 anisette 伺服器要選 **StikStore**（預設的 ani.sidestore.io 會 WebSocket 斷線）。換 SideStore 版本後要「Manage Pairing File → SideStore → Place」重放配對檔，**不要按 Export**。
 - 簽名用 Apple ID 是另開的，沒有受信任裝置，驗證碼只能收簡訊；短時間要太多次會被 Apple 限流約一天。iPhone 設定裡的「取得驗證碼」是主帳號的，不適用。
 - 自動續簽捷徑「續簽 App」：設定 VPN 連線 LocalDevVPN → 等待 3 秒 → SideStore「Refresh All Apps」；自動化每天 21:00、立即執行、不通知。iOS 27 捷徑若出現 ADI error -45061：SideStore → Settings → User Customizations → Reset adi.db。
+- 2026-10-11（iOS 27.2 Beta）：安裝和 Refresh All 都報 `Failed to install IPA, error: (Socket(Kind(NotConnected)))`。只重放配對檔、LocalDevVPN 的 Tunnel IP 改 `10.7.0.0/32`、重裝 LocalDevVPN 都沒用。照官方文件依序做「確認 Wi-Fi＋LocalDevVPN 都連著、關掉其他 VPN → SideStore Settings → VPN Configuration 的 Device IP 設 `10.7.0.1` → 完整重做配對（SideStore Reset Pairing File、iloader Delete Stored Pairing → Refresh → 重新配對 → Place）→ **手機重開機**」後好了（做到重開機才成功）。
 - 不要用非官方的 SideInstaller。
 - 7 天沒續簽 App 會打不開；真的過期就接電腦用 iloader 重裝 SideStore。
 

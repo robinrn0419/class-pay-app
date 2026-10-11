@@ -81,6 +81,7 @@ button:focus-visible,input:focus-visible,.ruler:focus-visible{outline:2px solid 
   width:3.4em;padding:5px 6px;border:0;border-radius:7px;background:var(--fill);color:var(--label);
   font:inherit;font-variant-numeric:tabular-nums;text-align:right;-moz-appearance:textfield;appearance:textfield;
 }
+#paid{width:5.5em}
 .ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* 加減鈕 */
@@ -402,6 +403,11 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       <div class="group" id="gapBox" hidden><div class="note warn" id="gap"></div></div>
       <div class="group"><ul class="list" id="rows"></ul></div>
       <p class="foot" id="formula"></p>
+      <div class="group" id="paidBox">
+        <div class="row"><span>實際收到</span>
+          <div class="ctl"><input id="paid" type="number" inputmode="numeric" min="0" aria-label="實際收到的金額"><span class="v">元</span></div></div>
+      </div>
+      <p class="foot" id="paidNote"></p>
       <div class="group"><button type="button" class="rec-toggle" id="recToggle"></button></div>
       <p class="foot" id="recNote"></p>
     </section>
@@ -414,6 +420,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
         <div class="cmp-cap" id="monthCount"></div>
       </div>
       <div class="group" id="recBox"><ul class="list" id="recList"></ul></div>
+      <p class="foot" id="recTip">點一筆可以填實際收到的金額；合計和記一筆都用實際收到的。</p>
       <p class="foot" id="recEmpty">還沒有紀錄。每次算出金額都會自動存進來。</p>
       <p class="foot" id="boxNote" hidden></p>
     </section>
@@ -539,6 +546,14 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
   function loadRec(){try{var a=JSON.parse(localStorage.getItem(RKEY));return Array.isArray(a)?a:[]}catch(e){return []}}
   function saveRec(){try{localStorage.setItem(RKEY,JSON.stringify(recs))}catch(e){}shareRec()}
   var recs=loadRec();
+  /* 實際收到的金額：有填 paid 就用 paid，沒填就是算出的 total */
+  function got(r){return typeof r.paid==='number'?r.paid:r.total}
+  function setPaid(r,s){
+    s=String(s).replace(/[,，\s元]/g,'');
+    if(s===''||+s===r.total){delete r.paid;return true}
+    if(!/^\d+$/.test(s))return false;
+    r.paid=+s;return true;
+  }
   var DKEY='class-pay-deleted-v1';
   var dels=(function(){try{var a=JSON.parse(localStorage.getItem(DKEY));return Array.isArray(a)?a:[]}catch(e){return []}})();
   function forget(id){
@@ -706,6 +721,13 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     rt.textContent=recSkip?'改回存入紀錄':'不存入紀錄';
     rt.classList.toggle('skip',!recSkip);
     $('recNote').textContent=recSkip?'這筆不會出現在紀錄裡。':'這筆已經自動存進紀錄。';
+    var cr=recs.filter(function(y){return y.id===recId})[0];
+    $('paidBox').hidden=$('paidNote').hidden=!cr;
+    if(cr){
+      if(document.activeElement!==$('paid'))$('paid').value=typeof cr.paid==='number'?cr.paid:'';
+      $('paid').placeholder=String(cr.total);
+      $('paidNote').textContent='跟算出的不一樣才要填，沒填就當作收到 '+fmt(cr.total)+' 元'+(cr.unit?'（'+fmt(cr.pay)+' × 數量的合計）':'')+'。';
+    }
     var was=p.disabled;
     if(current===2){p.disabled=!mineReady();p.textContent=p.disabled?'先選完難易度':'收起我的答案，交給對方'}
     else if(current===3){p.disabled=!st.theirs;p.textContent=st.theirs?'算出金額':'先選難易度'}
@@ -876,13 +898,14 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     var now=new Date(),sum=0,n=0;
     recs.forEach(function(r){
       var d=new Date(r.t);
-      if(d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()){sum+=r.total;n++}
+      if(d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()){sum+=got(r);n++}
     });
     $('monthLabel').textContent=(now.getMonth()+1)+' 月合計';
     $('monthSum').textContent=fmt(sum);
     $('monthCount').textContent='這個月共 '+n+' 筆';
     $('recBox').hidden=!recs.length;
     $('recEmpty').hidden=!!recs.length;
+    $('recTip').hidden=!recs.length;
     $('boxNote').hidden=!BOX;
     $('boxNote').textContent=boxState==='ok'?'記一筆讀得到這些紀錄。':'記一筆還讀不到這些紀錄'+(boxState?'：'+boxState:'')+'。';
     var ul=$('recList');ul.textContent='';
@@ -897,9 +920,10 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       var ico=el('span','b-ico');ico.style.background='var(--c-'+x.id+')';ico.innerHTML=icon(x.id);row.appendChild(ico);
       var main=el('span','rec-main');
       main.appendChild(el('b',null,x.name));
-      main.appendChild(el('small',null,(d.getMonth()+1)+'/'+d.getDate()+'・'+r.sum+(r.unit?'，一個 '+fmt(r.pay)+' 元':'')));
+      var calc=typeof r.paid==='number'?'算出 '+fmt(r.total)+' 元・':'';
+      main.appendChild(el('small',null,(d.getMonth()+1)+'/'+d.getDate()+'・'+calc+r.sum+(r.unit?'，一個 '+fmt(r.pay)+' 元':'')));
       row.appendChild(main);
-      row.appendChild(el('span','rec-amt',fmt(r.total)+' 元'));
+      row.appendChild(el('span','rec-amt',fmt(got(r))+' 元'));
       var back=el('div','rec-back'),bd=el('button','rec-back-del','刪除');bd.type='button';
       bd.addEventListener('click',function(){dropRec(li,row,r)});
       back.appendChild(bd);li.appendChild(back);
@@ -960,11 +984,26 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     }
     row.addEventListener('touchend',end);
     row.addEventListener('touchcancel',end);
-    row.addEventListener('click',function(){if(openRow===row)closeRow()});
+    row.addEventListener('click',function(){
+      if(openRow===row){closeRow();return}
+      if(!recEdit)editPaid(r);
+    });
   }
   document.addEventListener('touchstart',function(e){
     if(openRow&&!openRow.parentNode.contains(e.target))closeRow();
   },{passive:true});
+  /* 點紀錄：填實際收到的金額（iPhone 會跳出系統的輸入框） */
+  function editPaid(r){
+    buzz.tap();
+    var s=prompt('實際收到多少元？\n算出的是 '+fmt(r.total)+' 元，留空就照算出的。',typeof r.paid==='number'?String(r.paid):'');
+    if(s===null)return;
+    if(!setPaid(r,s)){alert('請輸入數字。');return}
+    saveRec();paint();paintRecords();
+  }
+  $('paid').addEventListener('input',function(){
+    var r=recs.filter(function(y){return y.id===recId})[0];
+    if(r&&setPaid(r,this.value))saveRec();
+  });
   $('recFab').addEventListener('click',function(){buzz.tap();recEdit=false;paintRecords();show(5)});
   $('editRec').addEventListener('click',function(){buzz.tap();recEdit=!recEdit;paint();paintRecords()});
   $('recToggle').addEventListener('click',function(){
