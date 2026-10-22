@@ -12,7 +12,7 @@
 ## 資料夾內容
 - `www/index.html`：目前最新的完整 App（單一 HTML 檔，沒有外部依賴，系統字體，可離線）。
 - `www/icon.png`：App 圖示（512×512）。2026-10-16 換成收據從出紙口吐出來：深黑底 #15181A（跟記一筆圖示同色）、灰色出紙口、米白收據寫「＝ $」（金色），下緣是不規則撕痕加一圈白色纖維邊（v1.0.14；v1.0.12 用過「撕下來了」那版，使用者改成這版）。原始檔 `design/icon.svg`（用 Chromium 轉 PNG，「$」用 DejaVu Sans 字體）。使用者要的方向：暗色系、有錢和計算的感覺、不要太寫實。
-- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v17`，更新網頁版時要加一。
+- `web-offline/`：離線網頁版（index.html + sw.js + manifest + icon），之前其實沒部署過；階段 3 起放在公開 repo `robinrn0419/class-pay-app`，用 GitHub Pages 發布。與 `www/index.html` 只差 PWA 設定（head 的 meta／manifest 和結尾註冊 sw.js），改 App 時要一起同步。（另一個網站 trunnionlab.com 是 `technic-studio` repo，放在 Vercel，跟這個專案無關。）sw.js 的 VERSION 目前是 `class-pay-v18`，更新網頁版時要加一。
 
 ## App 現在的功能
 四步流程：選內容 → 我評估 → 對方評估（看不到我的答案）→ 結果。
@@ -51,10 +51,11 @@
 - 震動走 `Capacitor.Plugins.Haptics`，網頁版自動略過。量尺按下／換級 selection；加減鈕、開關、分段、選內容、返回 impact LIGHT；交給對方 MEDIUM；結果：差不到 5 級 notification SUCCESS，差 5 級以上 `buzz.alarm()` 重重三下（HEAVY ×3，間隔 150ms，使用者說原本 WARNING 和 SUCCESS 分不出來）。
 - **紀錄**（2026-10-09 加）：每次算出金額自動存（localStorage key `class-pay-records-v1`，最多 500 筆）；結果頁有「不存入紀錄」↔「改回存入紀錄」；在結果頁按「修改」再算會更新同一筆（`recId`），選新內容或「再算一筆」才開新的一輪。首頁右下角浮動「紀錄」按鈕 → 第 5 頁：最上面當月合計（單個買算單價×數量，教學算這一堂），下面是清單（最新在上），右上「編輯」可刪單筆，也可以往左滑刪除（滑一點露出「刪除」鈕，滑過一半震一下、放開直接刪；使用者要求兩種都保留）。不加備註（使用者決定）。
 - **實際收到**（2026-10-11 加）：紀錄多選填欄位 `paid`（實際收到的金額，沒填＝照算出的 `total`；填的和 total 一樣就刪掉 paid）。結果頁公式下面一列「實際收到 [輸入框] 元」（「不存入紀錄」時藏起來），紀錄頁點一筆用 `prompt()` 改（留空＝照算出的，可以填 0）。當月合計、清單金額、記一筆匯入都用 `got(r)`（有 paid 用 paid）；清單小字多「算出 N 元」。按「修改」重算時 paid 保留。
+- **橫向／寬螢幕版面**（2026-10-22 加，v1.0.15）：`@media (min-width:640px)`（iPhone 橫拿、iPad）整套換樣式，直向完全不變（`.col` 直向是 `display:contents`）。使用者看過幾版都說醜，最後選的是「首頁 C＋結果 A」：首頁左側欄是內容清單、右邊是本月合計大數字＋各內容彩色長條（`paintDash()`／`monthSums()`，用 `got(r)`）；我的評估左側欄放條件、右邊大數字級數（`.lvbig`）＋量尺；對方評估沒有側欄、一把大量尺；結果和紀錄左邊超大數字、右邊明細（細線分隔）。主按鈕是右下角膠囊；「紀錄」移到標題列（`#navRec`，橫向時沒有浮動鈕）；標題列右上顯示「1 / 2 我先填」「2 / 2 換對方填」（`#navStep`）。`.shell` 的 `data-s` 是目前第幾頁，CSS 靠它換樣式。左右留了 safe-area 避開瀏海。使用者不想被舊風格限制，要改橫向時可以大膽一點，但先畫設計圖給他挑。
 - 左緣 16px 滑回：跟手、放開過半或快甩才返回（手指停住超過 100ms 不算快甩）；「對方評估」頁禁止滑回（怕對方看到我的答案）。
 
 ### 更新 App 的流程
-1. 改 `www/index.html`，同步到 `web-offline/index.html`（只差 PWA 的 head meta／manifest 和結尾註冊 sw.js），`web-offline/sw.js` 的 VERSION 加一（目前 `class-pay-v17`）。
+1. 改 `www/index.html`，同步到 `web-offline/index.html`（只差 PWA 的 head meta／manifest 和結尾註冊 sw.js），`web-offline/sw.js` 的 VERSION 加一（目前 `class-pay-v18`）。
 2. `npx cap sync` → commit → push，約 2 分鐘後雲端產生新版。
 3. 手機：LocalDevVPN 連線 → SideStore Sources 下拉重新整理 → My Apps 按 UPDATE（設定會保留）。
 
