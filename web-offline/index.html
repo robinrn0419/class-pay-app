@@ -301,6 +301,44 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
 .rec-toggle.skip{color:var(--warn)}
 .rec-toggle:active{background:var(--press)}
 
+/* 橫向／寬螢幕（iPhone 橫拿、iPad）：左右兩欄 */
+.col{display:contents}  /* 直向時當作不存在，排版跟原本一樣 */
+.shell{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.sheet{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+@media (min-width:640px){
+  .shell{max-width:1040px}
+  .sheet-in{max-width:640px}
+  .scroll{--gap:20px;padding-bottom:88px}
+  .tiles{grid-template-columns:repeat(4,1fr)}
+  .screen.on.cols{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--gap);align-items:start}
+  .cols > .col{display:block;min-width:0}
+  .cols > .col:first-child{position:sticky;top:0}
+  #s3.on{max-width:680px;margin:0 auto}
+  /* 主按鈕浮在右欄下方，不再佔一整條 */
+  .dock{
+    position:absolute;z-index:3;bottom:calc(12px + env(safe-area-inset-bottom,0px));right:calc(16px + env(safe-area-inset-right,0px));
+    left:calc(env(safe-area-inset-left,0px) + 16px + (100% - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px) - 32px - 20px) / 2 + 20px);
+    padding:0;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+  .shell[data-s="3"] .dock{left:max(calc(16px + env(safe-area-inset-left,0px)),calc(50% - 340px));right:max(calc(16px + env(safe-area-inset-right,0px)),calc(50% - 340px))}  /* 對方評估頁置中，跟內容同寬 */
+  .dock .primary{box-shadow:0 6px 18px rgba(0,0,0,.22)}
+  .dock .primary:disabled{background:var(--card);box-shadow:0 0 0 .5px var(--sep)}
+  .fab{right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+}
+/* iPhone 橫拿：高度很矮，收緊上下空間 */
+@media (min-width:640px) and (max-height:500px){
+  :root{padding-bottom:0}
+  .large{font-size:28px;margin:0 4px 10px}
+  .tile{min-height:128px}
+  .tile .ghost{width:104px;height:104px}
+  #s1{padding-bottom:64px}
+  .hero{padding:14px 16px 12px}
+  .hero-num{font-size:64px}
+  .cmp{height:60px;margin-top:6px}
+  .banner{padding:10px 12px}
+  .group{margin-top:10px}
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
@@ -328,7 +366,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     </section>
 
     <!-- 2 我填 -->
-    <section class="screen" id="s2">
+    <section class="screen cols" id="s2"><div class="col">
       <div class="banner"><span class="b-ico" id="bIco2"></span><span><b id="bName2"></b><small id="bMeta2"></small></span></div>
       <div class="group" id="gTeach">
         <div class="row"><span>班別</span>
@@ -358,6 +396,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
         </div>
       </div>
       <p class="foot" id="pieceNote"></p>
+      </div><div class="col">
 
       <div class="group" id="gMine">
         <div class="diff"><div class="diff-head"><span>我評的難易度</span><span class="lv" id="lv-mine"></span></div>
@@ -384,7 +423,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
         </div>
       </div>
       <p class="foot" id="teachNote"></p>
-    </section>
+    </div></section>
 
     <!-- 3 對方填 -->
     <section class="screen" id="s3">
@@ -397,7 +436,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     </section>
 
     <!-- 4 結果 -->
-    <section class="screen" id="s4">
+    <section class="screen cols" id="s4"><div class="col">
       <div class="hero" id="hero">
         <div class="hero-top"><span id="hIco"></span><span id="payLabel"></span></div>
         <div class="hero-num"><output id="pay">0</output><span>元</span></div>
@@ -410,6 +449,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
         <div class="cmp-cap" id="cmpCap"></div>
       </div>
       <div class="group" id="gapBox" hidden><div class="note warn" id="gap"></div></div>
+      </div><div class="col">
       <div class="group"><ul class="list" id="rows"></ul></div>
       <p class="foot" id="formula"></p>
       <div class="group" id="paidBox">
@@ -419,20 +459,21 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       <p class="foot" id="paidNote"></p>
       <div class="group"><button type="button" class="rec-toggle" id="recToggle"></button></div>
       <p class="foot" id="recNote"></p>
-    </section>
+    </div></section>
 
     <!-- 5 紀錄 -->
-    <section class="screen" id="s5">
+    <section class="screen cols" id="s5"><div class="col">
       <div class="hero">
         <div class="hero-top"><span id="monthLabel"></span></div>
         <div class="hero-num"><output id="monthSum">0</output><span>元</span></div>
         <div class="cmp-cap" id="monthCount"></div>
       </div>
+      </div><div class="col">
       <div class="group" id="recBox"><ul class="list" id="recList"></ul></div>
       <p class="foot" id="recTip">點一筆可以填實際收到的金額；合計和記一筆都用實際收到的。</p>
       <p class="foot" id="recEmpty">還沒有紀錄。每次算出金額都會自動存進來。</p>
       <p class="foot" id="boxNote" hidden></p>
-    </section>
+    </div></section>
   </main>
 
   <button type="button" class="fab" id="recFab">
@@ -774,7 +815,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
 
   function show(n){
     $('shell').classList.toggle('back',n<current);
-    current=n;
+    current=n;$('shell').dataset.s=n;  /* 橫向時主按鈕的位置跟著頁面換 */
     document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on')});
     $('s'+n).classList.add('on');
     $('scroll').scrollTop=0;$('nav').classList.remove('lined');
