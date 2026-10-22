@@ -292,20 +292,178 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
 .rec-toggle.skip{color:var(--warn)}
 .rec-toggle:active{background:var(--press)}
 
+/* 橫向／寬螢幕（iPhone 橫拿、iPad）：另一套版面。直向時這些都不會出現 */
+.col{display:contents}  /* 直向時當作不存在，排版跟原本一樣 */
+.nav-rec,.nav-step,.dash,.lvbig,.bars{display:none}
+.shell{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.sheet{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+@media (min-width:640px){
+  :root{--side:color-mix(in srgb,var(--card) 55%,var(--bg));--sidew:330px;--line:var(--sep)}
+  .shell{max-width:none}
+  .sheet-in{max-width:640px}
+  .fab{display:none}
+
+  /* 標題列：透明、不顯示標題，按鈕靠右；左上是返回 */
+  .nav{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-bottom:0!important;justify-content:flex-end;gap:6px;padding:0 16px 0 10px}
+  .nav-title{display:none}
+  #navBack{margin-right:auto}
+  .shell:not([data-s="1"]) #openSet{display:none}
+  .shell[data-s="1"] .nav-rec{display:flex}
+  .shell[data-s="1"] #navSpacer{display:none}
+  .nav-step{display:block;font-size:14px;color:var(--sec);padding:0 8px;font-variant-numeric:tabular-nums}
+  .nav-step:empty{display:none}
+  /* 有側欄的頁面（首頁、我的評估）：左邊一條比較亮的底色，連標題列一起 */
+  .shell[data-s="1"],.shell[data-s="2"]{background:linear-gradient(90deg,var(--side) calc(env(safe-area-inset-left,0px) + var(--sidew)),transparent 0)}
+
+  .scroll{padding:0}
+  .screen.on.cols{display:grid;grid-template-columns:1fr 1fr;align-items:start}
+  .cols > .col{display:block;min-width:0}
+  .cols > .col:first-child{position:sticky;top:0}
+  .group{background:none;border-radius:0;margin-top:0}
+  .foot{margin:8px 0 0}
+
+  /* 主按鈕：右下角的膠囊 */
+  .dock{
+    position:absolute;z-index:3;left:auto;padding:0;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;
+    right:calc(28px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  }
+  .dock::before{content:"";position:absolute;z-index:-1;left:-48px;right:-28px;top:-28px;bottom:-18px;background:linear-gradient(rgba(0,0,0,0),var(--bg) 45%);pointer-events:none}  /* 捲到按鈕下面的字淡出 */
+  .primary{width:auto;min-width:150px;height:46px;padding:0 26px;border-radius:999px;font-weight:700}
+  .primary:disabled{background:none;box-shadow:inset 0 0 0 1px var(--sep)}
+  .primary:not(:disabled)::after{content:" →"}
+  .shell[data-s="4"] .primary::after{content:""}
+
+  /* 1 首頁：左邊清單，右邊這個月的收入 */
+  #s1.on{display:grid;grid-template-columns:var(--sidew) 1fr;grid-template-rows:auto auto 1fr;min-height:100%;padding-bottom:0}
+  #s1 .large{grid-column:1;margin:0 24px 12px;font-size:26px}
+  #s1 .tiles{grid-column:1;display:block;margin:0}
+  #s1 > .foot{grid-column:1;margin:12px 24px 20px}
+  .tile{
+    flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;width:100%;min-height:0;
+    padding:12px 22px 12px 24px;border-radius:0;background:none;color:var(--label);
+    border-top:.5px solid var(--line);transition:background .15s;
+  }
+  .tile:last-child{border-bottom:.5px solid var(--line)}
+  .tile:active{transform:none;filter:none;background:var(--press)}
+  .tile .ghost{display:none}
+  .tile .ico{flex:none;width:40px;height:40px;padding:8px;border-radius:11px;background:var(--c);color:var(--on-tint)}
+  .tile > span{flex:1}
+  .tile b{font-size:17px;font-weight:600}
+  .tile small{color:var(--sec);opacity:1}
+  .tile::after{content:"";width:8px;height:8px;border:solid var(--sec);border-width:2px 2px 0 0;transform:rotate(45deg);opacity:.6;margin-right:4px}
+  .dash{display:block;grid-column:2;grid-row:1/4;padding:14px 32px 24px}
+  .dash-lab{font-size:13px;color:var(--sec);letter-spacing:.16em}
+  .dash-num{margin-top:2px;font-family:var(--round);font-weight:700;font-size:clamp(72px,12vw,128px);line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .dash-num small{font-family:var(--font);font-size:20px;font-weight:600;letter-spacing:0;color:var(--sec);margin-left:8px}
+  .bars{display:flex;gap:2px;height:8px;margin-top:18px;border-radius:4px;overflow:hidden;background:var(--fill)}
+  .bars i{display:block;height:100%}
+  .leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12px;color:var(--sec);font-variant-numeric:tabular-nums}
+  .leg span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:var(--c)}
+
+  /* 2 我的評估：左邊側欄放內容和條件，右邊放難易度 */
+  #s2.on.cols{grid-template-columns:var(--sidew) 1fr;min-height:100%}
+  #s2 > .col:first-child{padding:0 0 20px}
+  #s2 > .col:last-child{padding:6px 32px 88px}
+  #s2 .banner{margin:0;padding:6px 24px 16px;background:none;border-radius:0}
+  #s2 .banner b{font-size:19px}
+  #s2 .col:first-child .group{border-top:.5px solid var(--line)}
+  #s2 .col:first-child .row{padding:7px 20px 7px 24px}
+  #s2 .col:first-child .foot{margin:10px 24px 0}
+  .seg{background:none;padding:0;gap:4px}
+  .seg button{min-width:0;height:28px;padding:0 10px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--sep);color:var(--sec)}
+  .seg button[aria-pressed="true"]{background:none;color:var(--tint);box-shadow:inset 0 0 0 1.5px var(--tint)}
+  .stp{background:none;gap:8px;height:30px}
+  .stp button{width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--sep);font-size:19px;line-height:28px}
+  .stp button + button::before{display:none}
+  .diff{padding:0}
+  #s2 .col:last-child .diff + .diff{margin-top:14px}
+  #s2 .col:last-child .diff + .diff::before{display:none}
+  .diff-head > span:first-child{font-size:13px;color:var(--sec);letter-spacing:.14em}
+  .lvbig{display:flex;align-items:baseline;gap:12px;margin:0 0 4px;color:var(--tint)}
+  .lvbig b{font-family:var(--round);font-size:clamp(64px,9vw,104px);font-weight:700;line-height:1.02;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .lvbig span{font-size:22px;font-weight:700;color:var(--label)}
+  .lvbig.empty b{color:var(--sep)}
+  .lvbig.empty span{font-size:15px;font-weight:500;color:var(--sec)}
+  #gMine .lv,#s3 .lv{display:none}
+  #gLong{margin-top:14px;border-top:.5px solid var(--line)}
+  #gLong .row{padding:8px 0}
+  #s2 .col:last-child .foot{margin-top:2px}
+
+  /* 3 對方評估：沒有側欄，只給對方一把大量尺 */
+  #s3.on{padding:0 48px 88px}
+  #s3 .banner{margin:4px 0 0;padding:0;background:none;border-radius:0;gap:10px}
+  #s3 .banner .b-ico{width:28px;height:28px;border-radius:8px}
+  #s3 .banner .b-ico svg{width:18px;height:18px}
+  #s3 .banner > span{display:flex;align-items:baseline;gap:10px}
+  #s3 .banner small{font-size:14px}
+  #s3 .group{margin-top:16px}
+  #s3 .ruler{height:52px}
+  #s3 > .foot{margin-top:4px}
+
+  /* 4 結果、5 紀錄：左邊超大數字，右邊明細 */
+  #s4.on.cols,#s5.on.cols{grid-template-columns:1.25fr 1fr;min-height:100%}
+  #s4 > .col:first-child,#s5 > .col:first-child{padding:0 28px 0 28px}
+  #s4 > .col:last-child,#s5 > .col:last-child{margin:6px 28px 88px 0;padding-left:24px;border-left:.5px solid var(--line)}
+  #s5 > .col:last-child{margin-bottom:24px}
+  .cols .hero{
+    display:flex;flex-direction:column;margin:0;padding:6px 0 18px;border-radius:0;background:none;color:var(--label);animation:none;
+    min-height:min(calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 44px),540px);
+  }
+  .cols .hero-top{font-size:13px;letter-spacing:.16em;color:var(--sec);opacity:1;font-weight:500}
+  .cols .hero-top svg{display:none}
+  #s4 .hero-top::before{content:attr(data-name);color:var(--tint);font-weight:700;margin-right:4px}
+  .cols .hero .hero-num{flex:1;display:flex;flex-wrap:wrap;align-items:baseline;align-content:center;margin:0 0 0 -6px;font-size:clamp(96px,17vw,210px);line-height:.95;letter-spacing:-.04em}
+  #s4 .hero .hero-num{color:var(--tint)}
+  .cols .hero .hero-num span{margin-left:10px;font-size:22px;color:var(--label);opacity:1}
+  .cols .hero .cmp{margin:0 4px;height:58px;color:var(--tint)}
+  .cols .hero .cmp-cap{color:var(--sec);opacity:1;font-size:12px;letter-spacing:.06em}
+  #s5 .hero .hero-num{flex:none;margin-top:auto}
+  #s5 .bars{display:flex}
+  #s5 .hero .cmp-cap{margin-top:8px}
+  #gapBox{margin-top:10px}
+  #gapBox .note{padding:0;font-size:13px}
+  .list .kv{padding:8px 0;min-height:0;font-size:14px}
+  .row + .row::before,.list li + li::before{left:0}
+  .list .kv{border-bottom:.5px solid var(--line)}
+  .list li + li::before{display:none}
+  #s4 .col:last-child .row{padding:8px 0}
+  #s4 .col:last-child .foot{margin:6px 0 0}
+  #paidBox{margin-top:12px;border-top:.5px solid var(--line);border-bottom:.5px solid var(--line)}
+  .rec-toggle{min-height:44px;margin-top:10px;text-align:left}
+  /* 紀錄清單：左邊一條顏色線，不用圖示 */
+  #recList .rec{background:var(--bg);padding:9px 0;min-height:56px;border-bottom:.5px solid var(--line)}
+  #recList li + li::before{display:none}
+  #recList .b-ico{width:4px;height:30px;border-radius:2px}
+  #recList .b-ico svg{display:none}
+  #recList .rec-main b{font-size:15px}
+  #recList .rec-amt{font-family:var(--round);font-weight:700}
+}
+/* iPhone 橫拿：高度很矮，收緊一點 */
+@media (min-width:640px) and (max-height:500px){
+  :root{padding-bottom:0}
+  .lvbig b{font-size:84px}
+  .cols .hero .hero-num{font-size:clamp(96px,17vw,160px)}
+  #s1 .large{margin-bottom:8px}
+  .tile{padding-top:9px;padding-bottom:9px}
+  .tile .ico{width:36px;height:36px;padding:7px}
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
 </style>
 </head>
 <body>
-<div class="shell" id="shell">
+<div class="shell" id="shell" data-s="1">
   <header class="nav" id="nav">
     <button type="button" class="nav-btn" id="navBack" hidden>
       <svg viewBox="0 0 12 21" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2 2 10.5 10 19"/></svg>
       <span id="backLabel"></span>
     </button>
     <span id="navSpacer"></span>
+    <button type="button" class="nav-btn nav-rec" id="navRec">紀錄</button>
     <div class="nav-title" id="navTitle"></div>
+    <span class="nav-step" id="navStep"></span>
     <button type="button" class="nav-btn" id="openSet">設定</button>
     <button type="button" class="nav-btn" id="editRec" hidden>編輯</button>
   </header>
@@ -316,10 +474,11 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       <h1 class="large">課堂薪水</h1>
       <div class="tiles" id="subjects"></div>
       <p class="foot">先選這次的內容，接著由你和對方各自評難易度，最後算出金額。</p>
+      <div class="dash"><div class="dash-lab" id="dashLab"></div><div class="dash-num"><span id="dashSum">0</span><small id="dashCount"></small></div><div class="bars" id="dashBars"></div><div class="leg" id="dashLeg"></div></div>
     </section>
 
     <!-- 2 我填 -->
-    <section class="screen" id="s2">
+    <section class="screen cols" id="s2"><div class="col">
       <div class="banner"><span class="b-ico" id="bIco2"></span><span><b id="bName2"></b><small id="bMeta2"></small></span></div>
       <div class="group" id="gTeach">
         <div class="row"><span>班別</span>
@@ -349,9 +508,10 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
         </div>
       </div>
       <p class="foot" id="pieceNote"></p>
+      </div><div class="col">
 
       <div class="group" id="gMine">
-        <div class="diff"><div class="diff-head"><span>我評的難易度</span><span class="lv" id="lv-mine"></span></div>
+        <div class="diff"><div class="diff-head"><span>我評的難易度</span><span class="lv" id="lv-mine"></span></div><div class="lvbig" id="big-mine"></div>
           <div class="ruler" data-k="mine" aria-label="我評的難易度"></div></div>
       </div>
 
@@ -375,20 +535,20 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
         </div>
       </div>
       <p class="foot" id="teachNote"></p>
-    </section>
+    </div></section>
 
     <!-- 3 對方填 -->
     <section class="screen" id="s3">
       <div class="banner"><span class="b-ico" id="bIco3"></span><span><b id="bName3"></b><small id="summary"></small></span></div>
       <div class="group">
-        <div class="diff"><div class="diff-head"><span>綜合難易度</span><span class="lv" id="lv-theirs"></span></div>
+        <div class="diff"><div class="diff-head"><span>綜合難易度</span><span class="lv" id="lv-theirs"></span></div><div class="lvbig" id="big-theirs"></div>
           <div class="ruler" data-k="theirs" aria-label="對方評的綜合難易度"></div></div>
       </div>
       <p class="foot">老師填的級數已經收起來。請依你自己的判斷，在量尺上點選或拖曳，給這次的內容一個綜合難易度。</p>
     </section>
 
     <!-- 4 結果 -->
-    <section class="screen" id="s4">
+    <section class="screen cols" id="s4"><div class="col">
       <div class="hero" id="hero">
         <div class="hero-top"><span id="hIco"></span><span id="payLabel"></span></div>
         <div class="hero-num"><output id="pay">0</output><span>元</span></div>
@@ -401,6 +561,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
         <div class="cmp-cap" id="cmpCap"></div>
       </div>
       <div class="group" id="gapBox" hidden><div class="note warn" id="gap"></div></div>
+      </div><div class="col">
       <div class="group"><ul class="list" id="rows"></ul></div>
       <p class="foot" id="formula"></p>
       <div class="group" id="paidBox">
@@ -410,20 +571,22 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
       <p class="foot" id="paidNote"></p>
       <div class="group"><button type="button" class="rec-toggle" id="recToggle"></button></div>
       <p class="foot" id="recNote"></p>
-    </section>
+    </div></section>
 
     <!-- 5 紀錄 -->
-    <section class="screen" id="s5">
+    <section class="screen cols" id="s5"><div class="col">
       <div class="hero">
         <div class="hero-top"><span id="monthLabel"></span></div>
         <div class="hero-num"><output id="monthSum">0</output><span>元</span></div>
+        <div class="bars" id="monthBars"></div>
         <div class="cmp-cap" id="monthCount"></div>
       </div>
+      </div><div class="col">
       <div class="group" id="recBox"><ul class="list" id="recList"></ul></div>
       <p class="foot" id="recTip">點一筆可以填實際收到的金額；合計和記一筆都用實際收到的。</p>
       <p class="foot" id="recEmpty">還沒有紀錄。每次算出金額都會自動存進來。</p>
       <p class="foot" id="boxNote" hidden></p>
-    </section>
+    </div></section>
   </main>
 
   <button type="button" class="fab" id="recFab">
@@ -662,6 +825,11 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     var lv=$('lv-'+k),txt=v?v+' 級・'+band(v):'點選或拖曳';
     if(lv.textContent!==txt){lv.textContent=txt;if(v)bump(lv)}
     lv.classList.toggle('set',!!v);
+    var big=$('big-'+k);  /* 橫向時的大數字 */
+    if(big){
+      big.innerHTML='<b>'+(v||'—')+'</b><span>'+(v?'級・'+band(v):'點選或拖曳')+'</span>';
+      big.classList.toggle('empty',!v);
+    }
   }
 
   function paint(){
@@ -716,6 +884,9 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     $('editRec').hidden=current!==5||!recs.length;
     $('editRec').textContent=recEdit?'完成':'編輯';
     $('navTitle').textContent=['','','我的評估','對方評估','結果','紀錄'][current];
+    $('navStep').textContent=current===2?'1 / 2　我先填':current===3?'2 / 2　換對方填':'';
+    if(current===1)paintDash();
+    if(x)$('payLabel').parentNode.dataset.name=x.name;
     $('backLabel').textContent=current===2?'內容':current===4?'修改':'返回';
     var rt=$('recToggle');
     rt.textContent=recSkip?'改回存入紀錄':'不存入紀錄';
@@ -765,7 +936,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
 
   function show(n){
     $('shell').classList.toggle('back',n<current);
-    current=n;
+    current=n;$('shell').dataset.s=n;  /* 橫向時主按鈕的位置跟著頁面換 */
     document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on')});
     $('s'+n).classList.add('on');
     $('scroll').scrollTop=0;$('nav').classList.remove('lined');
@@ -893,6 +1064,36 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
   function goBack(){buzz.tap();recEdit=false;show(current===2||current===5?1:2)}
   $('navBack').addEventListener('click',goBack);
 
+  /* 這個月的合計，依內容分開（首頁和紀錄頁的彩色長條） */
+  function monthSums(){
+    var now=new Date(),by={},sum=0,n=0;
+    recs.forEach(function(r){
+      var d=new Date(r.t);
+      if(d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()){by[r.sub]=(by[r.sub]||0)+got(r);sum+=got(r);n++}
+    });
+    return {m:now.getMonth()+1,by:by,sum:sum,n:n};
+  }
+  function paintBars(box,ms){
+    box.textContent='';
+    SUBJECTS.forEach(function(x){
+      if(!ms.by[x.id])return;
+      var i=el('i');i.style.flex=String(ms.by[x.id]);i.style.background='var(--c-'+x.id+')';box.appendChild(i);
+    });
+  }
+  function paintDash(){
+    var ms=monthSums();
+    $('dashLab').textContent=ms.m+' 月合計';
+    $('dashSum').textContent=fmt(ms.sum);
+    $('dashCount').textContent=ms.n?'元・'+ms.n+' 筆':'元';
+    paintBars($('dashBars'),ms);
+    var leg=$('dashLeg');leg.textContent='';
+    SUBJECTS.forEach(function(x){
+      if(!ms.by[x.id])return;
+      var s=el('span',null,x.name+' '+fmt(ms.by[x.id]));s.style.setProperty('--c','var(--c-'+x.id+')');leg.appendChild(s);
+    });
+    if(!ms.n)leg.appendChild(el('span',null,'這個月還沒有紀錄'));
+  }
+
   /* 紀錄頁 */
   function paintRecords(){
     var now=new Date(),sum=0,n=0;
@@ -903,6 +1104,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     $('monthLabel').textContent=(now.getMonth()+1)+' 月合計';
     $('monthSum').textContent=fmt(sum);
     $('monthCount').textContent='這個月共 '+n+' 筆';
+    paintBars($('monthBars'),monthSums());
     $('recBox').hidden=!recs.length;
     $('recEmpty').hidden=!!recs.length;
     $('recTip').hidden=!recs.length;
@@ -1004,6 +1206,7 @@ body[data-sub="pcb"]{--tint:var(--c-pcb)}
     var r=recs.filter(function(y){return y.id===recId})[0];
     if(r&&setPaid(r,this.value))saveRec();
   });
+  $('navRec').addEventListener('click',function(){$('recFab').click()});  /* 橫向時的「紀錄」 */
   $('recFab').addEventListener('click',function(){buzz.tap();recEdit=false;paintRecords();show(5)});
   $('editRec').addEventListener('click',function(){buzz.tap();recEdit=!recEdit;paint();paintRecords()});
   $('recToggle').addEventListener('click',function(){
